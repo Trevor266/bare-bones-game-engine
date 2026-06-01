@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "mouse.h"
 #include "win32.h"
 
 static KeyCode Win32_VirtualKey_KeyCode_Lookup[256] = {
@@ -41,6 +42,17 @@ static KeyCode Win32_VirtualKey_KeyCode_Lookup[256] = {
 	['7'] = KEY_7,
 	['8'] = KEY_8,
 	['9'] = KEY_9,
+};
+
+// This maybe isn't the most efficient way to do this. To keep mouse button lookup keys and keyboard input keys and lookups separate, this creates two 256 byte lookups for ease of use with using 
+// win32 preprocessors as indexes in the looksup, VK_Keys are kept in the same lookup table in win32, this separates them into two lookups which technically doubles this to 2kb instead of 1kb to represent the same 
+// things.
+static MouseButton Win32_VirtualKey_MouseButton_Lookup[256] = {
+	[VK_LBUTTON] 	= MOUSEBUTTON_ONE,
+	[VK_RBUTTON] 	= MOUSEBUTTON_TWO,
+	[VK_MBUTTON] 	= MOUSEBUTTON_THREE,
+	[VK_XBUTTON1] 	= MOUSEBUTTON_FOUR,
+	[VK_XBUTTON2]	= MOUSEBUTTON_FIVE,
 };
 
 void Win32_Start(void) {

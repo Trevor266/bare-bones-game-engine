@@ -1,11 +1,10 @@
 #include <windows.h>
 #include <stdint.h>
+
 // Setup a KeyCode enum. This is used to represent operating system level keycodes that have specific values in the operating system. 
 // This should in theory allow us to not have to worry about which operating system we're working with when we're in high level game logic trying 
 // to deterine keypresses.
-
-// enum KeyCode
-typedef enum {
+typedef enum KeyCode {
     /* Invalid */
     KEYCODE_INVALID     = 0,
 

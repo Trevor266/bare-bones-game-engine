@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "keyboard.h"
+#include "mouse.h"
 #include "win32.h"
 
 /*
