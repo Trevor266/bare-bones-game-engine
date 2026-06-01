@@ -16,7 +16,8 @@
 #define LOGICAL_HEIGHT 720
 
 #ifdef _WIN32
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
+{
     Win32_Start();
     return 0;
 }
