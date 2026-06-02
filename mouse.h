@@ -1,13 +1,18 @@
 #ifndef MOUSE_H
 #define MOUSE_H
 
+// TODO(Trevor): This is just defining mouse buttons that are present in the windows virtual key table for now. The idea 
+// is that this will be used to store the overall state of the mouses button presses, and separate them from keyboard input event state.
+// I'm not a fan of how they are put into the same table in Win32, this will ideally keep usage between the keyboard and mouse lookups the same
+// for consistency.
 // VK_LBUTTON                          0x01    Left mouse button
 // VK_RBUTTON                          0x02    Right mouse button
 // VK_CANCEL                           0x03    Control-break processing
 // VK_MBUTTON                          0x04    Middle mouse button
 // VK_XBUTTON1                         0x05    X1 mouse button
 // VK_XBUTTON2                         0x06    X2 mouse button
-typedef enum MouseButton {
+typedef enum MouseButton 
+{
     MOUSEBUTTON_INVALID     = 0,
     MOUSEBUTTON_ONE         = 1,
     MOUSEBUTTON_TWO         = 2,
