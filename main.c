@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include "keyboard.h"
 #include "mouse.h"
@@ -20,8 +21,12 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
 {
     Win32_Start();
+
+    while (Win32_PeekMessages())
+    {
+
+    }
     return 0;
 }
 #endif
 // TODO: Linux support.
-//test

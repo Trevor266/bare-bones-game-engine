@@ -1,6 +1,6 @@
 #include "keyboard.h"
 
-
+KeyEvent KeyboardEventState[KEYCODE_COUNT] = {0};
 
 void Initialize_Keyboard_Subsystem()
 {

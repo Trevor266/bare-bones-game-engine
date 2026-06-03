@@ -1,7 +1,6 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include <windows.h>
 #include <stdint.h>
 
 // Setup a keycode enum. This enum is used to abstract system level keycodes for the abstraction layer - each os loop

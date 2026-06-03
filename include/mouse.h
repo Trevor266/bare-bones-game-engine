@@ -1,7 +1,7 @@
 #ifndef MOUSE_H
 #define MOUSE_H
 
-// TODO(Trevor): This is just defining mouse buttons that are present in the windows virtual key table for now. The idea 
+// TODO: This is just defining mouse buttons that are present in the windows virtual key table for now. The idea 
 // is that this will be used to store the overall state of the mouses button presses, and separate them from keyboard input event state.
 // I'm not a fan of how they are put into the same table in Win32, this will ideally keep usage between the keyboard and mouse lookups the same
 // for consistency.

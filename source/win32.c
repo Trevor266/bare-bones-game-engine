@@ -2,8 +2,12 @@
 #include "mouse.h"
 #include "win32.h"
 
+#include <stdbool.h>
+#include <stdio.h>
+#include <windows.h>
+
 // Lookup for checking a win32 virtual key's mapping in the abstraction layer.
-static KeyCode Win32_VirtualKey_KeyCode_Lookup[256] = 
+KeyCode Win32_VirtualKey_KeyCode_Lookup[256] = 
 {
 	['A'] 					= KEY_A,
 	['B'] 					= KEY_B,
@@ -82,8 +86,8 @@ static KeyCode Win32_VirtualKey_KeyCode_Lookup[256] =
 	[VK_RIGHT] 				= KEY_ARROW_RIGHT,
 	[VK_PRIOR] 				= KEY_PAGE_UP,
 	[VK_NEXT] 				= KEY_PAGE_DOWN,
-	[VK_END] 				= KEY_HOME,
-	[VK_HOME] 				= KEY_END,
+	[VK_END] 				= KEY_END,
+	[VK_HOME] 				= KEY_HOME,
 	[VK_SELECT]		 		= KEY_SELECT,
 	[VK_NUMLOCK] 			= KEY_NUMLOCK,
 	[VK_SCROLL] 			= KEY_SCROLL,
@@ -140,7 +144,7 @@ static KeyCode Win32_VirtualKey_KeyCode_Lookup[256] =
 // This isn't the most efficient way to store this, this is a deliberate quality of life choice to keep usage consistent between abstraction layer level mouse buttons and key inputs while maintaining separation between the two. 
 // This creates two 256 byte lookups for ease of use with using win32 preprocessors as indexes in the looksup, VK_Keys are kept in the same lookup table in win32, this separates them into two lookups which technically doubles this to 2kb instead of 1kb to represent the same 
 // things.
-static MouseButton Win32_VirtualKey_MouseButton_Lookup[256] = 
+MouseButton Win32_VirtualKey_MouseButton_Lookup[256] = 
 {
 	[VK_LBUTTON] 	= MOUSEBUTTON_ONE,
 	[VK_RBUTTON] 	= MOUSEBUTTON_TWO,
@@ -149,13 +153,102 @@ static MouseButton Win32_VirtualKey_MouseButton_Lookup[256] =
 	[VK_XBUTTON2]	= MOUSEBUTTON_FIVE,
 };
 
-void Win32_Start(void) 
+static HWND Win32_Window = NULL;
+
+static LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	KeyCode test = Win32_VirtualKey_KeyCode_Lookup['A'];
-    MessageBoxA(NULL, "test", "test", MB_OK);
+    switch (msg)
+    {
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
+
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        {
+			AllocConsole();
+			freopen("CONOUT$", "w", stdout);
+
+			KeyCode code        = Win32_TranslateKeyCode(wParam);
+			bool    isRepeat    = (lParam & (1 << 30)) != 0;
+
+			KeyboardEventState[code].keyCode          = code;
+			KeyboardEventState[code].unicodeCodepoint = (uint32_t)wParam;
+			KeyboardEventState[code].keyPressState    = KEYPRESS_STATE_DOWN;
+
+			if (!isRepeat)
+			{
+				KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_PRESSED;
+			}
+
+			if (isRepeat)
+			{
+				KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_HELD;
+			}
+
+			return 0;
+        }
+
+        case WM_KEYUP:
+        case WM_SYSKEYUP:
+        {
+            KeyCode code = Win32_TranslateKeyCode(wParam);
+			KeyboardEventState[code].keyPressState  = KEYPRESS_STATE_RELEASED;
+
+			return 0;
+        }
+    }
+
+    return DefWindowProcA(hwnd, msg, wParam, lParam);
 }
 
-static inline KeyCode Win32_TranslateKeyCode(WPARAM wParam) 
+void Win32_Start(void) 
+{
+	WNDCLASSEXA wc      = {0};
+		wc.cbSize           = sizeof(WNDCLASSEXA);
+		wc.style            = CS_HREDRAW | CS_VREDRAW;
+		wc.lpfnWndProc      = Win32_WindowProc;
+		wc.hInstance        = GetModuleHandleA(NULL);
+		wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+		wc.lpszClassName    = "Window";
+
+    RegisterClassExA(&wc);
+
+    Win32_Window = CreateWindowExA(
+        0,
+        "Window",
+        "TestWindow",
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        1280, 720,
+        NULL, NULL,
+        GetModuleHandleA(NULL),
+        NULL
+    );
+
+    ShowWindow(Win32_Window, SW_SHOW);
+}
+
+bool Win32_PeekMessages(void)
+{
+    MSG msg;
+
+    while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE))
+    {
+        if (msg.message == WM_QUIT)
+		{
+			return false;
+		} 
+
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+		PrintActiveKeyState();
+    }
+
+    return true;
+}
+
+inline KeyCode Win32_TranslateKeyCode(WPARAM wParam) 
 {
     if (wParam > 255)
     {
@@ -163,4 +256,17 @@ static inline KeyCode Win32_TranslateKeyCode(WPARAM wParam)
     }
     
     return Win32_VirtualKey_KeyCode_Lookup[wParam];
+}
+
+void PrintActiveKeyboardState(void)
+{
+    for (int i = 0; i < KEYCODE_COUNT; i++)
+    {
+        if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_DOWN)
+        {
+            printf("KeyCode=%d  VK=0x%02X\n", 
+                   KeyboardEventState[i].keyCode,
+                   KeyboardEventState[i].unicodeCodepoint);
+        }
+    }
 }
