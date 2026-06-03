@@ -1,8 +1,8 @@
 #include "keyboard.h"
 
+KeyEvent KeyboardEventState[KEYCODE_COUNT] = {0};
 
-
-static void Initialize_Keyboard_Subsystem()
+void Initialize_Keyboard_Subsystem()
 {
 	#ifdef _WIN32
 	// TODO: Windows support.
