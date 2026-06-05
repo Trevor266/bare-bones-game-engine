@@ -165,11 +165,8 @@ static LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:
-        {
-			AllocConsole();
-			freopen("CONOUT$", "w", stdout);
-
-			KeyCode code        = Win32_TranslateKeyCode(wParam);
+        {	
+			KeyCode code        = Win32_VirtualKey_KeyCode_Lookup[wParam];
 			bool    isRepeat    = (lParam & (1 << 30)) != 0;
 
 			KeyboardEventState[code].keyCode          = code;
@@ -180,21 +177,22 @@ static LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPA
 			{
 				KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_PRESSED;
 			}
-
-			if (isRepeat)
+			else
 			{
 				KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_HELD;
 			}
 
+			PrintActiveKeyboardState();
 			return 0;
         }
 
         case WM_KEYUP:
         case WM_SYSKEYUP:
         {
-            KeyCode code = Win32_TranslateKeyCode(wParam);
-			KeyboardEventState[code].keyPressState  = KEYPRESS_STATE_RELEASED;
+            KeyCode code = Win32_VirtualKey_KeyCode_Lookup[wParam];
+			KeyboardEventState[code].keyPressState = KEYPRESS_STATE_RELEASED;
 
+			PrintActiveKeyboardState();
 			return 0;
         }
     }
@@ -227,11 +225,18 @@ void Win32_Start(void)
     );
 
     ShowWindow(Win32_Window, SW_SHOW);
+
+	#if DEBUG
+		AllocConsole();
+		freopen("CONOUT$", "w", stdout);
+	#endif
 }
 
 bool Win32_PeekMessages(void)
 {
     MSG msg;
+
+	ClearReleasedKeysFromKeyboardState();
 
     while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE))
     {
@@ -242,31 +247,47 @@ bool Win32_PeekMessages(void)
 
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
-		PrintActiveKeyState();
     }
 
     return true;
-}
-
-inline KeyCode Win32_TranslateKeyCode(WPARAM wParam) 
-{
-    if (wParam > 255)
-    {
-		return KEYCODE_INVALID;
-    }
-    
-    return Win32_VirtualKey_KeyCode_Lookup[wParam];
 }
 
 void PrintActiveKeyboardState(void)
 {
     for (int i = 0; i < KEYCODE_COUNT; i++)
     {
-        if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_DOWN)
+        if (KeyboardEventState[i].keyPressState != 0)
         {
-            printf("KeyCode=%d  VK=0x%02X\n", 
+            const char *state = "UNKNOWN";
+
+            if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_PRESSED)
+            {
+                state = "PRESSED";
+            }
+            if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_HELD)
+            {
+                state = "HELD";
+            }
+            if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_RELEASED)
+            {
+                state = "RELEASED";
+            }
+
+            printf("KeyCode=%d  VK=0x%02X  State=%s\n",
                    KeyboardEventState[i].keyCode,
-                   KeyboardEventState[i].unicodeCodepoint);
+                   KeyboardEventState[i].unicodeCodepoint,
+                   state);
         }
     }
+}
+
+void ClearReleasedKeysFromKeyboardState()
+{
+	for (int i = 0; i < KEYCODE_COUNT; i++)
+    {
+        if (KeyboardEventState[i].keyPressState == KEYPRESS_STATE_RELEASED)
+        {
+			KeyboardEventState[i].keyPressState = 0;
+		}
+	}
 }
