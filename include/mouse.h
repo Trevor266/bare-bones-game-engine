@@ -31,7 +31,7 @@ typedef enum MouseButton
 #define MOUSEBUTTON_IS_HELD(mouseButtonEvent)       ((mouseButtonEvent).buttonState & MOUSEBUTTON_STATE_HELD)
 
 typedef struct {
-    uint8_t         buttonState;            // A set of 4 flags [00001111] representing the state of the keypress (See Keypress States). 
+    uint8_t         buttonState;            // A set of 4 flags [00001111] representing the state of the button (See MouseButton States). 
     MouseButton     mouseButton;            // Abstract mouse button field used to map to the platform specific mouse buttons to generic ones.
     int16_t         xCoordinate;           // X coordinate of the window click.
     int16_t         yCoordinate;           // Y coordinate of the window click.
