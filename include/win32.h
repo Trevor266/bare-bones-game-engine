@@ -8,12 +8,13 @@
 
 extern KeyCode     Win32_VirtualKey_KeyCode_Lookup[256];
 
-bool    Win32_PeekMessages(void);
-void    Win32_Start(void);
-void    PrintActiveKeyboardState(void);
-void    ClearReleasedKeysFromKeyboardState(void);
-void    ClearReleasedMouseButtonsFromMouseButtonState(void);
-void    SetMouseDownState(MouseButton, LPARAM);
-void    SetMouseUpState(MouseButton, LPARAM);
-void    PrintMouseButtonState(MouseButton);
+bool                Win32_PeekMessages(void);
+void                Win32_Start(void);
+LRESULT CALLBACK    Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+void                PrintActiveKeyboardState(void);
+void                ClearReleasedKeysFromKeyboardState(void);
+void                ClearReleasedMouseButtonsFromMouseButtonState(void);
+void                SetMouseDownState(MouseButton, LPARAM);
+void                SetMouseUpState(MouseButton, LPARAM);
+void                PrintMouseButtonState(MouseButton);
 #endif
