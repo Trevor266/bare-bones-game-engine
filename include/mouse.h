@@ -1,16 +1,9 @@
 #ifndef MOUSE_H
 #define MOUSE_H
 
-// TODO: This is just defining mouse buttons that are present in the windows virtual key table for now. The idea 
-// is that this will be used to store the overall state of the mouses button presses, and separate them from keyboard input event state.
-// I'm not a fan of how they are put into the same table in Win32, this will ideally keep usage between the keyboard and mouse lookups the same
-// for consistency.
-// VK_LBUTTON                          0x01    Left mouse button
-// VK_RBUTTON                          0x02    Right mouse button
-// VK_CANCEL                           0x03    Control-break processing
-// VK_MBUTTON                          0x04    Middle mouse button
-// VK_XBUTTON1                         0x05    X1 mouse button
-// VK_XBUTTON2                         0x06    X2 mouse button
+#include <stdint.h>
+
+// Define generic mouse button enum, this will be used at the game level for keying into mouse button state.
 typedef enum MouseButton 
 {
     MOUSEBUTTON_INVALID     = 0,
@@ -21,5 +14,29 @@ typedef enum MouseButton
     MOUSEBUTTON_FIVE        = 5,
     MOUSEBUTTON_COUNT       = 6,
 } MouseButton;
+
+// Define mouse button states
+// Define 4 bitfields that represent the state of a mouse click. Doing this packs our data into a consistent size 
+// independent of the compiler, os, processor, etc. 
+#define MOUSEBUTTON_STATE_DOWN     (1 << 0)        // [00000001]
+#define MOUSEBUTTON_STATE_PRESSED  (1 << 1)        // [00000010]
+#define MOUSEBUTTON_STATE_RELEASED (1 << 2)        // [00000100]
+#define MOUSEBUTTON_STATE_HELD     (1 << 3)        // [00001000]
+
+// Defines function like macros for ease of use when using the above bitmasks, this gives the performance of bitmasks and compiler inlining with
+// a simpler function-like syntax and reduced repeated comparison code.
+#define MOUSEBUTTON_IS_DOWN(mouseButtonEvent)       ((mouseButtonEvent).buttonState & MOUSEBUTTON_STATE_DOWN)
+#define MOUSEBUTTON_IS_PRESSED(mouseButtonEvent)    ((mouseButtonEvent).buttonState & MOUSEBUTTON_STATE_PRESSED)
+#define MOUSEBUTTON_IS_RELEASED(mouseButtonEvent)   ((mouseButtonEvent).buttonState & MOUSEBUTTON_STATE_RELEASED)
+#define MOUSEBUTTON_IS_HELD(mouseButtonEvent)       ((mouseButtonEvent).buttonState & MOUSEBUTTON_STATE_HELD)
+
+typedef struct {
+    uint8_t         buttonState;            // A set of 4 flags [00001111] representing the state of the keypress (See Keypress States). 
+    MouseButton     mouseButton;            // Abstract mouse button field used to map to the platform specific mouse buttons to generic ones.
+    int16_t         xCoordinate;           // X coordinate of the window click.
+    int16_t         yCoordinate;           // Y coordinate of the window click.
+} MouseButtonEvent;
+
+extern MouseButtonEvent MouseButtonEventState[MOUSEBUTTON_COUNT];
 
 #endif
