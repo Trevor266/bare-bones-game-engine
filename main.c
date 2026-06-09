@@ -12,8 +12,8 @@
 #define LOGICAL_HEIGHT 720
 
 float tickAccumulator = 0.0f;
-float targetTickSeconds = 1.0f / 60.0f;  // 60hz logic
-float targetFrameSeconds = 1.0f / 144.0f; // 144hz render
+float targetTickSeconds = 1.0f / 60.0f;  // 60 tick
+float targetFrameSeconds = 1.0f / 60.0f; // 60 fps
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
