@@ -1,0 +1,41 @@
+General Notes:
+    A note on defines. Defines when compiled with clang at least, produce a constant value that's baked directly into the binary.
+    If you take a look at usages of these constants, you can see examples where if they are multiplied together, the compiler optimizes 
+    this into a single numeric constant. If we defined these as constant variables, the compiler will add a compare instruction to the generated 
+    machine code due to the optimizer being less confident without hard-defined variables.
+
+Win32 random notes:
+
+typedef union _LARGE_INTEGER {
+    struct {
+        DWORD LowPart;
+        LONG HighPart;
+    } DUMMYSTRUCTNAME;
+    struct {
+        DWORD LowPart;
+        LONG HighPart;
+    } u;
+    LONGLONG QuadPart;
+} LARGE_INTEGER;
+
+This struct is an interesting windows thing. They provide this union to allow older systems to be able to 
+pass around 64 bit integers, it consists of 2 structs with a high/low part, and a quad part field. The quad part 
+field is the actual 64 bit int. Since this is a union, it's 64 bits in size because of it's largest members size. 
+At any given point when you use this struct, you are either getting the low/high part of the int via the structs inside 
+the union, or you're getting the entire 64 bit value. 
+
+The two structs here are for two purposes:
+
+struct {
+...
+} u;
+
+u - Defines a tagged struct for compatibility with compilers that do not support anonymous structs
+
+struct {
+...
+} DUMMYSTRUCTNAME;
+
+DUMMYSTRUCTNAME - This defines a tagged struct to satisfy older compilers, however this macro is defined as an empty value, so 
+this is a trick to allow compilation of a union that provides both a named and anonymous struct member depending 
+on the compiler.

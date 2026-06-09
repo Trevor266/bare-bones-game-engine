@@ -1,13 +1,17 @@
 #include "keyboard.h"
 #include "mouse.h"
 #include "win32.h"
+#include "controller.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
+#include <Xinput.h>
 
 // Lookup for checking a win32 virtual key's mapping in the abstraction layer.
 KeyCode Win32_VirtualKey_KeyCode_Lookup[256];
+
+// TODO: Abstract window into generic window.
 static HWND Win32_Window = NULL;
 
 void Win32_Start(void) 
@@ -76,56 +80,20 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
         case WM_KEYDOWN:
         case WM_SYSKEYDOWN:
         {	
-			KeyCode code        = Win32_VirtualKey_KeyCode_Lookup[wParam];
-			bool    isRepeat    = (lParam & (1 << 30)) != 0;
-
-			KeyboardEventState[code].keyCode          = code;
-			KeyboardEventState[code].keyPressState    = KEYPRESS_STATE_DOWN;
-
-			if (!isRepeat)
-			{
-				KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_PRESSED;
-			}
-			else
-			{
-				KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_HELD;
-			}
-			
-			#if DEBUG
-			if (MapVirtualKey(wParam, MAPVK_VK_TO_CHAR) == 0)
-			{
-				PrintActiveKeyboardState();
-			}
-
-			#endif
+			ProcessKeyDown(wParam, lParam);
 
 			return 0;
         }
 		case WM_CHAR:
 		{
-			// Get the scancode lparam
-			UINT    scanCode   = (lParam >> 16) & 0xFF;
-			// Get the virtual key from windows
-			UINT    virtualKey = MapVirtualKey(scanCode, MAPVK_VSC_TO_VK);
-			// Get the keyboard state lookup key from the virtual key.
-			KeyCode code       = Win32_VirtualKey_KeyCode_Lookup[virtualKey];
+			ProcessCharacter(wParam, lParam);
 
-			KeyboardEventState[code].unicodeCharacter = (uint32_t)wParam;
-
-			#if DEBUG
-			PrintActiveKeyboardState();
-			#endif
 			return 0;
 		}
         case WM_KEYUP:
         case WM_SYSKEYUP:
         {
-            KeyCode code = Win32_VirtualKey_KeyCode_Lookup[wParam];
-			KeyboardEventState[code].keyPressState = KEYPRESS_STATE_RELEASED;
-
-			#if DEBUG
-			PrintActiveKeyboardState();
-			#endif
+			ProcessKeyUp(wParam);
 
 			return 0;
         }
@@ -237,12 +205,78 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_KILLFOCUS:
 		{
+			// Some keys will break window focus, and it can cause a keyup to be missed and get stuck in a pressed
+			// state, so when the window loses focus, clear keyboard state to avoid this.
 			memset(KeyboardEventState, 0, sizeof(KeyboardEventState));
 			return 0;
 		}
     }
 
     return DefWindowProcA(hwnd, msg, wParam, lParam);
+}
+
+void Win32PollControllers(void)
+{
+	DWORD dwResult;    
+
+	// NOTE: This is being hardcoded to a size of 4 because xinput has a limit of 4 controllers. 
+	// This would need to be changed if the input backend were changed to support a broader range of controllers, 
+	// but given this is an xinput specific loop, it seems fine to hardcode this.
+	for (DWORD controllerIndex = 0; controllerIndex < 4; controllerIndex++ )
+	{
+		XINPUT_STATE state;
+		memset(&state, 0, sizeof(XINPUT_STATE));
+
+		// Simply get the state of the controller from XInput.
+		dwResult = XInputGetState(controllerIndex, &state);
+
+		if( dwResult == ERROR_SUCCESS )
+		{
+			// Controller is connected, map xinput state to controller state
+			ControllerStates[controllerIndex].Connected = true;
+			ControllerStates[controllerIndex].DPAD_UP = state.Gamepad.wButtons& XINPUT_GAMEPAD_DPAD_UP;
+			ControllerStates[controllerIndex].DPAD_DOWN = state.Gamepad.wButtons& XINPUT_GAMEPAD_DPAD_DOWN;
+			ControllerStates[controllerIndex].DPAD_LEFT = state.Gamepad.wButtons& XINPUT_GAMEPAD_DPAD_LEFT;
+			ControllerStates[controllerIndex].DPAD_RIGHT = state.Gamepad.wButtons& XINPUT_GAMEPAD_DPAD_RIGHT;
+			ControllerStates[controllerIndex].START = state.Gamepad.wButtons& XINPUT_GAMEPAD_START;
+			ControllerStates[controllerIndex].BACK = state.Gamepad.wButtons& XINPUT_GAMEPAD_BACK;
+			ControllerStates[controllerIndex].LEFT_SHOULDER = state.Gamepad.wButtons& XINPUT_GAMEPAD_LEFT_SHOULDER;
+			ControllerStates[controllerIndex].RIGHT_SHOULDER = state.Gamepad.wButtons& XINPUT_GAMEPAD_RIGHT_SHOULDER;
+			ControllerStates[controllerIndex].A = state.Gamepad.wButtons& XINPUT_GAMEPAD_A;
+			ControllerStates[controllerIndex].B = state.Gamepad.wButtons& XINPUT_GAMEPAD_B;
+			ControllerStates[controllerIndex].X = state.Gamepad.wButtons& XINPUT_GAMEPAD_X;
+			ControllerStates[controllerIndex].Y = state.Gamepad.wButtons& XINPUT_GAMEPAD_Y;
+			ControllerStates[controllerIndex].LEFT_TRIGGER = state.Gamepad.bLeftTrigger;
+			ControllerStates[controllerIndex].RIGHT_TRIGGER = state.Gamepad.bRightTrigger;
+			ControllerStates[controllerIndex].ThumbLX =	state.Gamepad.sThumbLX;
+			ControllerStates[controllerIndex].ThumbLY =	state.Gamepad.sThumbLY;
+			ControllerStates[controllerIndex].ThumbRX =	state.Gamepad.sThumbRX;
+			ControllerStates[controllerIndex].ThumbRY =	state.Gamepad.sThumbRY;
+		}
+		else
+		{
+			// Controller is disconnected, 0 out controller state.
+			ControllerStates[controllerIndex].Connected = false;
+			ControllerStates[controllerIndex].DPAD_UP = false;
+			ControllerStates[controllerIndex].DPAD_DOWN = false;
+			ControllerStates[controllerIndex].DPAD_LEFT = false;
+			ControllerStates[controllerIndex].DPAD_RIGHT = false;
+			ControllerStates[controllerIndex].START = false;
+			ControllerStates[controllerIndex].BACK = false;
+			ControllerStates[controllerIndex].LEFT_SHOULDER = false;
+			ControllerStates[controllerIndex].RIGHT_SHOULDER = false;
+			ControllerStates[controllerIndex].A = false;
+			ControllerStates[controllerIndex].B = false;
+			ControllerStates[controllerIndex].X = false;
+			ControllerStates[controllerIndex].Y = false;
+			ControllerStates[controllerIndex].LEFT_TRIGGER = 0;
+			ControllerStates[controllerIndex].RIGHT_TRIGGER = 0;
+			ControllerStates[controllerIndex].ThumbLX =	0;
+			ControllerStates[controllerIndex].ThumbLY =	0;
+			ControllerStates[controllerIndex].ThumbRX =	0;
+			ControllerStates[controllerIndex].ThumbRY =	0;
+		}
+	}
 }
 
 void ClearReleasedKeysFromKeyboardState()
@@ -265,6 +299,58 @@ void ClearReleasedMouseButtonsFromMouseButtonState()
 			MouseButtonEventState[i].buttonState = 0;
 		}
 	}
+}
+
+void ProcessCharacter(WPARAM wParam, LPARAM lParam)
+{
+	// Get the scancode lparam
+	UINT scanCode   = (lParam >> 16) & 0xFF;
+	// Get the virtual key from windows
+	UINT virtualKey = MapVirtualKey(scanCode, MAPVK_VSC_TO_VK);
+	// Get the keyboard state lookup key from the virtual key.
+	KeyCode code = Win32_VirtualKey_KeyCode_Lookup[virtualKey];
+
+	KeyboardEventState[code].unicodeCharacter = (uint32_t)wParam;
+
+	#if DEBUG
+	PrintActiveKeyboardState();
+	#endif
+}
+
+void ProcessKeyDown(WPARAM wParam, LPARAM lParam)
+{
+	KeyCode code        = Win32_VirtualKey_KeyCode_Lookup[wParam];
+	bool    isRepeat    = (lParam & (1 << 30)) != 0;
+
+	KeyboardEventState[code].keyCode          = code;
+	KeyboardEventState[code].keyPressState    = KEYPRESS_STATE_DOWN;
+
+	if (!isRepeat)
+	{
+		KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_PRESSED;
+	}
+	else
+	{
+		KeyboardEventState[code].keyPressState |= KEYPRESS_STATE_HELD;
+	}
+	
+	#if DEBUG
+	if (MapVirtualKey(wParam, MAPVK_VK_TO_CHAR) == 0)
+	{
+		PrintActiveKeyboardState();
+	}
+
+	#endif
+}
+
+void ProcessKeyUp(WPARAM wParam)
+{
+	KeyCode code = Win32_VirtualKey_KeyCode_Lookup[wParam];
+	KeyboardEventState[code].keyPressState = KEYPRESS_STATE_RELEASED;
+
+	#if DEBUG
+		PrintActiveKeyboardState();
+	#endif
 }
 
 void SetMouseDownState(MouseButton button, LPARAM lParam)
@@ -485,4 +571,42 @@ void PrintMouseButtonState(MouseButton button)
     printf("Button %d %s at %d, %d\n", button, state, 
            MouseButtonEventState[button].xCoordinate, 
            MouseButtonEventState[button].yCoordinate);
+}
+
+void PrintControllerState(void)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (!ControllerStates[i].Connected)
+		{
+			break;
+		}
+
+        printf("Controller %d:\n", i);
+        printf("  DPAD:         UP=%d DOWN=%d LEFT=%d RIGHT=%d\n",
+            ControllerStates[i].DPAD_UP,
+            ControllerStates[i].DPAD_DOWN,
+            ControllerStates[i].DPAD_LEFT,
+            ControllerStates[i].DPAD_RIGHT);
+        printf("  Buttons:      A=%d B=%d X=%d Y=%d\n",
+            ControllerStates[i].A,
+            ControllerStates[i].B,
+            ControllerStates[i].X,
+            ControllerStates[i].Y);
+        printf("  Shoulders:    L=%d R=%d\n",
+            ControllerStates[i].LEFT_SHOULDER,
+            ControllerStates[i].RIGHT_SHOULDER);
+        printf("  Menu:         START=%d BACK=%d\n",
+            ControllerStates[i].START,
+            ControllerStates[i].BACK);
+        printf("  Triggers:     L=%d R=%d\n",
+            ControllerStates[i].LEFT_TRIGGER,
+            ControllerStates[i].RIGHT_TRIGGER);
+        printf("  Left Stick:   X=%d Y=%d\n",
+            ControllerStates[i].ThumbLX,
+            ControllerStates[i].ThumbLY);
+        printf("  Right Stick:  X=%d Y=%d\n",
+            ControllerStates[i].ThumbRX,
+            ControllerStates[i].ThumbRY);
+    }
 }
