@@ -5,13 +5,15 @@
 #include <stdbool.h>
 #include "keyboard.h"
 #include "mouse.h"
+#include "window.h"
 
 extern KeyCode     Win32_VirtualKey_KeyCode_Lookup[256];
 
 bool                Win32_PeekMessages(void);
-void                Win32_Start(void);
+void                Win32_Start(WindowCreationParameters *windowCreationParams);
 LRESULT CALLBACK    Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 void                Win32PollControllers(void);
+void                Win32_InitializeWindow(WindowCreationParameters *windowCreationParams);
 void                PrintActiveKeyboardState(void);
 void                ClearReleasedKeysFromKeyboardState(void);
 void                ClearReleasedMouseButtonsFromMouseButtonState(void);

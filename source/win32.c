@@ -2,6 +2,7 @@
 #include "mouse.h"
 #include "win32.h"
 #include "controller.h"
+#include "window.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -11,22 +12,40 @@
 // Lookup for checking a win32 virtual key's mapping in the abstraction layer.
 KeyCode Win32_VirtualKey_KeyCode_Lookup[256];
 
-// TODO: Abstract window into generic window.
-static HWND Win32_Window = NULL;
-
-void Win32_Start(void) 
+void Win32_Start(WindowCreationParameters *windowCreationParams)
 {
-	WNDCLASSEXA wc      = {0};
-	wc.cbSize           = sizeof(WNDCLASSEXA);
-	wc.style            = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc      = Win32_WindowProc;
-	wc.hInstance        = GetModuleHandleA(NULL);
-	wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
-	wc.lpszClassName    = "Window";
+	Win32_InitializeWindow(windowCreationParams);
 
-    RegisterClassExA(&wc);
+    ShowWindow(GET_PLATFORMWINDOW_HWND(), SW_SHOW);
 
-    Win32_Window = CreateWindowExA(
+	#if DEBUG
+		AllocConsole();
+		freopen("CONOUT$", "w", stdout);
+	#endif
+}
+
+// Windows are handled by the operating system, we are only given an opaque look at the window itself through a pointer (Handle in Win32 land).
+// Because of this, we need to make a request to the operating system to make us a window and give us the pointer to it, which we then use to call
+// system functions that allow us to work with the window indirectly. This is handled the same on Linux, so we can rely on a pointer 
+// of a platform specific type to be handed back to us. We store this pointer in a globally provided PlatformWindowInstance.window
+// void pointer to allow the abstraction layer to not have to worry about the typing of this pointer.  
+void Win32_InitializeWindow(WindowCreationParameters *windowCreationParams)
+{
+	// TODO: The window creation flags here are meant to provide the icon file and cursor file if present, however the plumbing to load in 
+	// a file still needs to be added in. As part of that plumbing, it would be a good spot to add in an abstraction layer for handling generically loading in 
+	// a file -> bitmap -> pixelbuffer, and pixelbuffer -> bitmap, so when that is added in, update this to load in a platform specific bitmap from a file and pass it abstractly
+	// here as a pixel buffer, or make it the next priority item after adding image loading.
+	WNDCLASSEXA windowClass      = {0};
+	windowClass.cbSize           = sizeof(WNDCLASSEXA);
+	windowClass.style            = CS_HREDRAW | CS_VREDRAW;
+	windowClass.lpfnWndProc      = Win32_WindowProc;
+	windowClass.hInstance        = GetModuleHandleA(NULL);
+	windowClass.hCursor          = LoadCursor(NULL, IDC_ARROW);
+	windowClass.lpszClassName    = "Window";
+
+    RegisterClassExA(&windowClass);
+
+    PlatformWindowInstance.window = CreateWindowExA(
         0,
         "Window",
         "TestWindow",
@@ -37,13 +56,6 @@ void Win32_Start(void)
         GetModuleHandleA(NULL),
         NULL
     );
-
-    ShowWindow(Win32_Window, SW_SHOW);
-
-	#if DEBUG
-		AllocConsole();
-		freopen("CONOUT$", "w", stdout);
-	#endif
 }
 
 bool Win32_PeekMessages(void)
@@ -232,7 +244,7 @@ void Win32PollControllers(void)
 
 		if( dwResult == ERROR_SUCCESS )
 		{
-			// Controller is connected, map xinput state to controller state
+			// Controller is connected, map xinput state to controller state and toggle connected.
 			ControllerStates[controllerIndex].Connected = true;
 			ControllerStates[controllerIndex].DPAD_UP = state.Gamepad.wButtons& XINPUT_GAMEPAD_DPAD_UP;
 			ControllerStates[controllerIndex].DPAD_DOWN = state.Gamepad.wButtons& XINPUT_GAMEPAD_DPAD_DOWN;
