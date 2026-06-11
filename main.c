@@ -21,7 +21,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LARGE_INTEGER frequency;
     LARGE_INTEGER lastCounter;
 
-    Win32_Start();
+    Win32_Start(&WindowCreationParams);
 
     // Query for the high resolution performance frequency. This value represents the counts per second of the 
     // counter, this value is determined at system boot and therefore will not change during program runtime. 
@@ -55,8 +55,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         // Get the current time, and delta time from the last counter and current time.
         LARGE_INTEGER now;
         QueryPerformanceCounter(&now);
-        float dt = (float)(now.QuadPart - lastCounter.QuadPart) / (float)frequency.QuadPart;
-        tickAccumulator += dt;
+        float deltaTime = (float)(now.QuadPart - lastCounter.QuadPart) / (float)frequency.QuadPart;
+        tickAccumulator += deltaTime;
 
         // Set the last counter to now for the next cycle, and declare now to be the start time of the next 
         // frame cycle.
