@@ -17,11 +17,6 @@ void Win32_Start(WindowCreationParameters *windowCreationParams)
 	Win32_InitializeWindow(windowCreationParams);
 
     ShowWindow(GET_PLATFORMWINDOW_HWND(), SW_SHOW);
-
-	#if DEBUG
-		AllocConsole();
-		freopen("CONOUT$", "w", stdout);
-	#endif
 }
 
 // Windows are handled by the operating system, we are only given an opaque look at the window itself through a pointer (Handle in Win32 land).

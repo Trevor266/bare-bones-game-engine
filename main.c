@@ -2,9 +2,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h> 
 #include "keyboard.h"
 #include "mouse.h"
 #include "controller.h"
+#include "file.h"
 #include "win32.h"
 
 // Set the width and height the game will work with internally, this size is used regardless of the actual screen size.
@@ -18,8 +20,17 @@ float targetFrameSeconds = 1.0f / 60.0f; // 60 fps
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
 {
+    #if DEBUG
+		AllocConsole();
+		freopen("CONOUT$", "w", stdout);
+	#endif
+    
     LARGE_INTEGER frequency;
     LARGE_INTEGER lastCounter;
+
+    char *testTextFile = ReadTextFile("assets/data/test.txt");
+    printf("%s", testTextFile);
+    free(testTextFile);
 
     Win32_Start(&WindowCreationParams);
 

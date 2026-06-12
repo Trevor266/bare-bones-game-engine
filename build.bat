@@ -1,7 +1,7 @@
 @echo off
 if not exist build mkdir build
 
-set Sources=source/keyboard.c source/win32.c source/mouse.c source/controller.c source/window.c
+set Sources=source/keyboard.c source/win32.c source/mouse.c source/controller.c source/window.c source/file.c
 set ReleaseBuild=%1
 
 if /i "%ReleaseBuild%"=="release" (
@@ -14,6 +14,9 @@ if %errorlevel% neq 0 (
     echo Build failed.
     exit /b 1
 )
+
+:: Copy out asset folder into build directory.
+robocopy assets build\assets /E /NJH /NJS /NFL /NDL > nul
 
 "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe" /debugexe build\main.exe
 
