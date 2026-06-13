@@ -9,6 +9,7 @@
 #include "file.h"
 #include "win32.h"
 #include "bitmap.h"
+#include "pixelbuffer.h"
 
 // Set the width and height the game will work with internally, this size is used regardless of the actual screen size.
 #define LOGICAL_WIDTH  1280
@@ -29,13 +30,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LARGE_INTEGER frequency;
     LARGE_INTEGER lastCounter;
 
-    char *testTextFile = ReadTextFile("assets/data/test.txt");
-    printf("%s", testTextFile);
-    free(testTextFile);
+    #if DEBUG
+        char *testTextFile = ReadTextFile("assets/data/test.txt");
+        printf("Validating text file io: %s\n", testTextFile);
+        free(testTextFile);
+    #endif
 
+    // Set custom cursor and window icon.
     Bitmap *testBitmap = ReadBitmapFromFile("assets/resources/bitmaps/test.bmp");
+    PixelBuffer *pixelBuffer = ConvertBitmapToPixelBuffer(testBitmap);
 
-    Win32_Start(&WindowCreationParams);
+    WindowCreationParameters windowCreationParams;
+    windowCreationParams.cursorImage = pixelBuffer;
+    windowCreationParams.iconImage = pixelBuffer;
+    windowCreationParams.title = "Bare Bones Engine";
+
+    Win32_Start(&windowCreationParams);
 
     // Query for the high resolution performance frequency. This value represents the counts per second of the 
     // counter, this value is determined at system boot and therefore will not change during program runtime. 

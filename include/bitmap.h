@@ -31,7 +31,7 @@ typedef struct BitmapFileHeader{
     int32_t  height;       // Negative = top-down, positive = bottom-up
     uint16_t colorPlanes;
     uint16_t bitsPerPixel;
-    uint32_t compression;  // 0 = BI_RGB (uncompressed)
+    uint32_t compression;
     uint32_t imageSize;
     int32_t  xPixelsPerMeter;
     int32_t  yPixelsPerMeter;

@@ -1,7 +1,7 @@
 @echo off
 if not exist build mkdir build
 
-set Sources=source/keyboard.c source/win32.c source/mouse.c source/controller.c source/window.c source/file.c
+set Sources=source/keyboard.c source/win32.c source/mouse.c source/controller.c source/window.c source/file.c source/pixelbuffer.c
 set ReleaseBuild=%1
 
 if /i "%ReleaseBuild%"=="release" (

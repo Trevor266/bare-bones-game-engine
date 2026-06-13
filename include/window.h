@@ -6,8 +6,9 @@
 // A structure representing shared parameters relevant to window creation that either Linux or Win32 would 
 // care about when requesting an os window.
 typedef struct WindowCreationParameters {
-    PixelBuffer cursorImage;
-    PixelBuffer iconImage;
+    PixelBuffer*    cursorImage;
+    PixelBuffer*    iconImage;
+    char*           title;
 } WindowCreationParameters;
 
 // A structure representing the opaque platform specific window. For both Linux and Win32, a pointer of a platform specific type is 
@@ -17,7 +18,6 @@ typedef struct PlatformWindow {
     void* window;
 } PlatformWindow;
 
-extern WindowCreationParameters WindowCreationParams;
 extern PlatformWindow PlatformWindowInstance;
 
 // Convinience macros

@@ -26,24 +26,23 @@ void Win32_Start(WindowCreationParameters *windowCreationParams)
 // void pointer to allow the abstraction layer to not have to worry about the typing of this pointer.  
 void Win32_InitializeWindow(WindowCreationParameters *windowCreationParams)
 {
-	// TODO: The window creation flags here are meant to provide the icon file and cursor file if present, however the plumbing to load in 
-	// a file still needs to be added in. As part of that plumbing, it would be a good spot to add in an abstraction layer for handling generically loading in 
-	// a file -> bitmap -> pixelbuffer, and pixelbuffer -> bitmap, so when that is added in, update this to load in a platform specific bitmap from a file and pass it abstractly
-	// here as a pixel buffer, or make it the next priority item after adding image loading.
-	WNDCLASSEXA windowClass      = {0};
-	windowClass.cbSize           = sizeof(WNDCLASSEXA);
-	windowClass.style            = CS_HREDRAW | CS_VREDRAW;
-	windowClass.lpfnWndProc      = Win32_WindowProc;
-	windowClass.hInstance        = GetModuleHandleA(NULL);
-	windowClass.hCursor          = LoadCursor(NULL, IDC_ARROW);
-	windowClass.lpszClassName    = "Window";
+	// Setup window utilizing abstraction level window creation parameters.
+	WNDCLASSEXA windowClass      	= {0};
+	windowClass.cbSize           	= sizeof(WNDCLASSEXA);
+	windowClass.style            	= CS_HREDRAW | CS_VREDRAW;
+	windowClass.lpfnWndProc      	= Win32_WindowProc;
+	windowClass.hInstance        	= GetModuleHandleA(NULL);
+	windowClass.hIcon				= windowCreationParams->iconImage ? CreateIconFromPixelBuffer(windowCreationParams->iconImage) : LoadIcon(NULL, IDI_APPLICATION);
+	windowClass.hCursor          	= windowCreationParams->cursorImage ? CreateCursorFromPixelBuffer(windowCreationParams->cursorImage, 0, 0) : LoadCursor(NULL, IDC_ARROW); // CreateHICONFromPixelmap(windowCreationParams...)
+	windowClass.lpszClassName    	= "Window";
+	windowClass.hbrBackground		= CreateSolidBrush(RGB(235, 215, 185));
 
     RegisterClassExA(&windowClass);
 
     PlatformWindowInstance.window = CreateWindowExA(
         0,
         "Window",
-        "TestWindow",
+        windowCreationParams->title,
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         1280, 720,
@@ -616,4 +615,100 @@ void PrintControllerState(void)
             ControllerStates[i].ThumbRX,
             ControllerStates[i].ThumbRY);
     }
+}
+
+static HICON CreateHICONFromPixelBuffer(PixelBuffer *pixelBuffer, BOOL isIcon, int hotspotX, int hotspotY)
+{
+	/*
+		Windows uses an HICON for both cursors and window icons. An HICON is built from two bitmaps:
+		a 32-bit color bitmap containing the pixel data, and a 1 bit mask(alpha) bitmap that serves as
+		a transparency channel. When we provide a BITMAPV5HEADER, we are telling windows that the bitmap we 
+		are provided has alpha encoding, however it still requires us to provide a fallback mask bitmap.
+		This function serves to take a pixel buffer, and convert it into a valid color and mask bitmap so that windows will 
+		provide us a custom HICON we can use for the window icon and cursor.
+	*/
+    if (!pixelBuffer || !pixelBuffer->pixelData)
+	{
+		return NULL;
+	}
+
+	// Using the pixel buffer, convert to a windows bitmap to create an icon, windows takes a bitmap v5 heading.
+    BITMAPV5HEADER bitmapHeader     = {0};
+    bitmapHeader.bV5Size            = sizeof(BITMAPV5HEADER);
+    bitmapHeader.bV5Width           = pixelBuffer->width;
+    bitmapHeader.bV5Height          = -pixelBuffer->height;
+    bitmapHeader.bV5Planes          = 1;
+    bitmapHeader.bV5BitCount        = 32;
+    bitmapHeader.bV5Compression     = BI_BITFIELDS;
+    bitmapHeader.bV5RedMask         = 0x000000FF;
+    bitmapHeader.bV5GreenMask       = 0x0000FF00;
+    bitmapHeader.bV5BlueMask        = 0x00FF0000;
+    bitmapHeader.bV5AlphaMask       = 0xFF000000;
+
+	// Next utilize the header and request windows to allocate us bitmap
+    void *pixels = NULL;
+    HDC deviceContextHandle = GetDC(NULL);
+
+	// Create a bitmap to hold color data. This function will set the pixels pointer passed to it as the first byte in memory it allocated for us.
+    HBITMAP colorBitmap = CreateDIBSection(deviceContextHandle, (BITMAPINFO *)&bitmapHeader, DIB_RGB_COLORS, &pixels, NULL, 0);
+    ReleaseDC(NULL, deviceContextHandle);
+
+    if (!colorBitmap)
+	{
+		return NULL;
+	}
+
+	// Copy our pixel buffer data into the allocated dib, this must be handled separately if we are using 3 vs. 4 channel bitmaps.
+	uint8_t *pixelBufferData = (uint8_t *)pixelBuffer->pixelData;
+	uint8_t *dibPixels = (uint8_t *)pixels;
+	int pixelCount = pixelBuffer->width * pixelBuffer->height;
+
+	if (pixelBuffer->channelCount == 4)
+	{
+		memcpy(dibPixels, pixelBufferData, pixelCount * 4);
+	}
+	else if (pixelBuffer->channelCount == 3)
+	{
+		for (int i = 0; i < pixelCount; i++)
+		{
+			dibPixels[i * 4 + 0] = pixelBufferData[i * 3 + 0]; 	// R
+			dibPixels[i * 4 + 1] = pixelBufferData[i * 3 + 1]; 	// G
+			dibPixels[i * 4 + 2] = pixelBufferData[i * 3 + 2]; 	// B
+			dibPixels[i * 4 + 3] = 255;             			// A - If we are seeing a 24 bitmap, it doesn't support alpha, full opaque.
+		}
+	}
+
+	// Create a mask bitmap - if this fails, we could not convert the provided image, bail out and delete the color bitmap.
+    HBITMAP maskBitmap = CreateBitmap(pixelBuffer->width, pixelBuffer->height, 1, 1, NULL);
+    if (!maskBitmap)
+    {
+        DeleteObject(colorBitmap);
+        return NULL;
+    }
+
+	// Setup icon info with our color and mask bitmaps, along with click region and isIcon, which determines what we get back.
+    ICONINFO iconInfo   = {0};
+    iconInfo.fIcon      = isIcon;
+    iconInfo.xHotspot   = hotspotX;
+    iconInfo.yHotspot   = hotspotY;
+    iconInfo.hbmMask    = maskBitmap;
+    iconInfo.hbmColor   = colorBitmap;
+
+    HICON icon = CreateIconIndirect(&iconInfo);
+
+	// Hygiene.
+    DeleteObject(colorBitmap);
+    DeleteObject(maskBitmap);
+
+    return icon;
+}
+
+HCURSOR CreateCursorFromPixelBuffer(PixelBuffer *pixelBuffer, int hotspotX, int hotspotY)
+{
+    return (HCURSOR)CreateHICONFromPixelBuffer(pixelBuffer, FALSE, hotspotX, hotspotY);
+}
+
+HICON CreateIconFromPixelBuffer(PixelBuffer *pixelBuffer)
+{
+    return CreateHICONFromPixelBuffer(pixelBuffer, TRUE, 0, 0);
 }
