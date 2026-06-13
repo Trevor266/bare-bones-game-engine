@@ -8,6 +8,7 @@
 #include "controller.h"
 #include "file.h"
 #include "win32.h"
+#include "bitmap.h"
 
 // Set the width and height the game will work with internally, this size is used regardless of the actual screen size.
 #define LOGICAL_WIDTH  1280
@@ -24,13 +25,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		AllocConsole();
 		freopen("CONOUT$", "w", stdout);
 	#endif
-    
+
     LARGE_INTEGER frequency;
     LARGE_INTEGER lastCounter;
 
     char *testTextFile = ReadTextFile("assets/data/test.txt");
     printf("%s", testTextFile);
     free(testTextFile);
+
+    Bitmap *testBitmap = ReadBitmapFromFile("assets/resources/bitmaps/test.bmp");
 
     Win32_Start(&WindowCreationParams);
 
