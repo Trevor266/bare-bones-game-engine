@@ -33,7 +33,7 @@ void Win32_InitializeWindow(WindowCreationParameters *windowCreationParams)
 	windowClass.lpfnWndProc      	= Win32_WindowProc;
 	windowClass.hInstance        	= GetModuleHandleA(NULL);
 	windowClass.hIcon				= windowCreationParams->iconImage ? CreateIconFromPixelBuffer(windowCreationParams->iconImage) : LoadIcon(NULL, IDI_APPLICATION);
-	windowClass.hCursor          	= windowCreationParams->cursorImage ? CreateCursorFromPixelBuffer(windowCreationParams->cursorImage, 0, 0) : LoadCursor(NULL, IDC_ARROW); // CreateHICONFromPixelmap(windowCreationParams...)
+	windowClass.hCursor          	= windowCreationParams->cursorImage ? CreateCursorFromPixelBuffer(windowCreationParams->cursorImage, 0, 0) : LoadCursor(NULL, IDC_ARROW);
 	windowClass.lpszClassName    	= "Window";
 	windowClass.hbrBackground		= CreateSolidBrush(RGB(235, 215, 185));
 
