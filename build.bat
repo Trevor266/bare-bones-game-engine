@@ -7,7 +7,7 @@ set ReleaseBuild=%1
 if /i "%ReleaseBuild%"=="release" (
     clang -O2 -D_CRT_SECURE_NO_WARNINGS -Iinclude main.c %Sources% -o build\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
 ) else (
-    clang -g -gcodeview -DDEBUG -D_CRT_SECURE_NO_WARNINGS -Iinclude main.c %Sources% -o build\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
+    clang -g -gcodeview -DDEBUG -D_CRT_SECURE_NO_WARNINGS -Iinclude main.c %Sources% source/debug.c -o build\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
 )
 
 if %errorlevel% neq 0 (
