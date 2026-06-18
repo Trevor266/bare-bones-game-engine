@@ -1,7 +1,7 @@
 @echo off
 if not exist build mkdir build
 
-set Sources=source/keyboard.c source/win32.c source/mouse.c source/controller.c source/window.c source/file.c source/pixelbuffer.c
+set Sources=source/keyboard.c source/win32.c source/engine.c source/mouse.c source/controller.c source/window.c source/file.c source/pixelbuffer.c
 set ReleaseBuild=%1
 
 if /i "%ReleaseBuild%"=="release" (
@@ -12,6 +12,7 @@ if /i "%ReleaseBuild%"=="release" (
 
 if %errorlevel% neq 0 (
     echo Build failed.
+    pause
     exit /b 1
 )
 
@@ -19,6 +20,8 @@ if %errorlevel% neq 0 (
 robocopy assets build\assets /E /NJH /NJS /NFL /NDL > nul
 
 "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe" /debugexe build\main.exe
+
+exit
 
 :: %errorlevel% == 0 means the build worked completely fine, so we can start our debugger.
 ::-g enables debug information.

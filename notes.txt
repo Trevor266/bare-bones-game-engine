@@ -39,3 +39,61 @@ struct {
 DUMMYSTRUCTNAME - This defines a tagged struct to satisfy older compilers, however this macro is defined as an empty value, so 
 this is a trick to allow compilation of a union that provides both a named and anonymous struct member depending 
 on the compiler.
+
+
+
+ENGINE DESIGN NOTES (Work in progress, subject to common change.):
+Thinking about what this engine is trying to actually be at the end of this project, it seems relevant to define the broad strokes here.
+This engine is a 2d tile based game engine, that's essentially it, the design choices for now will be made with top down perspective in mind, 
+but it seems likely that it can be utilized for side scrolling type games too, these are essentially just 2d tile based games that render 
+a bit differently, the same plumbing is required in any case. In fact, there's really no reason this engine couldn't be utilized perfectly 
+fine for some rudamentary point and click type adventure games - it's a big state machine that will render tiles at a set size, handle click 
+events, animations, etc. But for this phase of building out this project, I am going to implement some sort of rpg-esque tech demo to 
+work out the architecture and design, so I won't be able to verify the other types of games yet.
+
+That is the main type of game this engine is attempting to assist in creating. To be able to support this, it seems reasonable to think about the 
+engine architecture like this:
+
+The engine needs to maintain an active game state - this essentailly means tracking an internal database of all relevant game data that will be used to determine 
+the scene that needs rendered, and what the player can or is doing. It can do this with a combination of processing 
+information per game tick, reading save/state data from disk, or input from the player themselves - Essentially the persistent data about the game, 
+along with the runtime data itself. These allow the engine to make an assessment about what the overall game is doing. 
+
+As part of the engine's state, the engine logically needs to track what needs to be shown to a player. As far as I can reason, you essentially only need to 
+really ever show two things to player - A level, which I consider to be a rendered game scene that is an active playable section of the game, 
+or an intermidiary screen - this might be a start menu, loading screen, etc. Beyond this, you may also have some sort of on screen ui or hud. To me, 
+these are no different than form controls on a website - they are clickable widgets or regions that take input of some kind, and they may trigger some kind of 
+event that some other thing reacts to. I'm not too sure on this yet, but in any case, they're conditionally rendered click regions, they can exist in 
+both an intermediary screen and a game level screen, so they're not really a separate thing to me, so the reasoning seems sound that this engine 
+will be desined with the idea of either having an active level screen or some intermediary type of screen, and that's really all the engine ever needs to be doing at 
+any given time. In this sense, this engine should be quite simple, it will essentially provide utilities for loading a level or non-level screen. 
+Based on the active screen being shown, and the game state, you can derive a set of things that should be rendered, where 
+they should be rendered, and what order they are rendered in, and the engine will simply blit a final image to a back buffer based on this, there's 
+nothing else going on as far as I can reason.
+
+Because of this, I'm going to start with a level size limit of 256x256 tiles for any given level, it's one of those good old computer numbers, and 
+it seems like enough for now. This will be configurable and may be increased if performance allows.
+
+Tiles are defined as whatever you want them to be, but it's setup by default to be 16x16, rendered up 4x for 64x64. This is a commonly used size for 
+tize based games.
+
+Engine {
+    // Generic structure containing game data
+    GameState           *gameData;
+
+    // The level or menu we are actively working with. Only one of these would be set I would think, though menu could be pre-loaded 
+    // potentially as an optional optimization if you maybe knew the next menu you wanted to load, no reason to not let both be set until we have 
+    // a reason to, a few calls to unset one or the other when needed seems reasonable to expect the consumer of the engine to do.
+
+    /*
+        Example workflow
+        Game starts -> Load in various startup/persistent data -> Load start menu -> menu loads, engine.menu = start menu -> user starts game, 
+        use game state to determine level to load, level is done loading, cleanup the active menu and show the current level -> Before level shows, preload data 
+        related to some menu that may be used next, perhaps a loading screen that will show no matter what outcome occurs next in game. -> level completes, either 
+        use cached menu or load menu data, show menu, cleanup level, set game state, load next level or menu based on state.
+    */
+    Level               *currentLevel;  // The current level data structure we have loaded into memory.
+    Menu                *menu;          // The current menu data structure we have loaded into memory. 
+}
+
+

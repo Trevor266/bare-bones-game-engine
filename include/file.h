@@ -1,9 +1,11 @@
 #ifndef _FILEH
 #define _FILEH
+#include <stdio.h>
 #include "bitmap.h"
 
-char*               ReadTextFile(const char *path);        
+char*               ReadTextFile(const char *path);
 Bitmap*             ReadBitmapFromFile(const char *path);
 static  FILE*       GetFileHandle(const char *fileHandle);
 static  long        GetFileBufferSize(FILE *fileHandle);
+int                 WriteBinaryFile(FILE *file, const char *contents);
 #endif
