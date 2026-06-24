@@ -20,7 +20,7 @@ static EngineConfiguration* BuildEngineConfiguration()
 
         Not Found       -       No engine.bin file exists containing the engine configuration, the engine is unusable in this state.
         Initialized     -       An engine.bin file didn't exist, so we created one, the values are all default values the engine hardcodes for initialization.
-        Customized      -       An engine.bin file exists, so at some point we already ran initialization and should treat this config as custom (potentially non-default).
+        Exists          -       An engine.bin file exists, so at some point we already ran initialization and should treat this config as custom (potentially non-default).
     */
 
     // We need to determine if the engine has a configuration file first.
@@ -40,16 +40,19 @@ static EngineConfiguration* BuildEngineConfiguration()
 static EngineConfiguration* BuildDefaultEngineConfiguration()
 {
     EngineConfiguration *defaultEngineConfiguration = malloc(sizeof(EngineConfiguration));
+
     if (!defaultEngineConfiguration)
     {
         return NULL;
     }
 
-    defaultEngineConfiguration->logicalGameHeight     = LOGICAL_HEIGHT;
-    defaultEngineConfiguration->logicalGameWidth      = LOGICAL_WIDTH;
-    defaultEngineConfiguration->tileHeight            = GAME_TILE_HEIGHT;
-    defaultEngineConfiguration->tileWidth             = GAME_TILE_WIDTH;
-    defaultEngineConfiguration->supportedSaveSlots    = SUPPORTED_SAVE_SLOTS;
+    defaultEngineConfiguration->logicalGameHeight       = LOGICAL_HEIGHT;
+    defaultEngineConfiguration->logicalGameWidth        = LOGICAL_WIDTH;
+    defaultEngineConfiguration->tileHeight              = GAME_TILE_HEIGHT;
+    defaultEngineConfiguration->tileWidth               = GAME_TILE_WIDTH;
+    defaultEngineConfiguration->supportedSaveSlots      = SUPPORTED_SAVE_SLOTS;
+    defaultEngineConfiguration->maxLevelHorizontalTiles = MAX_LEVEL_HORIZONTAL_TILES;
+    defaultEngineConfiguration->maxLevelVerticalTiles   = MAX_LEVEL_VERTICAL_TILES;
 
     int writeSuccess = WriteEngineConfiguration(defaultEngineConfiguration);
 
@@ -67,12 +70,14 @@ static int WriteEngineConfiguration(EngineConfiguration *config)
     }
 
     EngineConfigFile fileData;
-    fileData.fileSignature      = ENGINE_CONFIG_FILE_SIGNATURE;
-    fileData.logicalGameHeight  = config->logicalGameHeight;
-    fileData.logicalGameWidth   = config->logicalGameWidth;
-    fileData.supportedSaveSlots = config->supportedSaveSlots;
-    fileData.tileHeight         = config->tileHeight;
-    fileData.tileWidth          = config->tileWidth;
+    fileData.fileSignature              = ENGINE_CONFIG_FILE_SIGNATURE;
+    fileData.logicalGameHeight          = config->logicalGameHeight;
+    fileData.logicalGameWidth           = config->logicalGameWidth;
+    fileData.supportedSaveSlots         = config->supportedSaveSlots;
+    fileData.tileHeight                 = config->tileHeight;
+    fileData.tileWidth                  = config->tileWidth;
+    fileData.maxLevelHorizontalTiles    = config->maxLevelHorizontalTiles;
+    fileData.maxLevelVerticalTiles      = config->maxLevelVerticalTiles;
 
     fwrite(&fileData, sizeof(EngineConfigFile), 1, file);
     fclose(file);

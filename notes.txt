@@ -75,7 +75,7 @@ Because of this, I'm going to start with a level size limit of 256x256 tiles for
 it seems like enough for now. This will be configurable and may be increased if performance allows.
 
 Tiles are defined as whatever you want them to be, but it's setup by default to be 16x16, rendered up 4x for 64x64. This is a commonly used size for 
-tize based games.
+tile based games.
 
 Engine {
     // Generic structure containing game data
@@ -96,4 +96,64 @@ Engine {
     Menu                *menu;          // The current menu data structure we have loaded into memory. 
 }
 
+There is an engine configuration that is loaded in and is setup based on relevant preferences of options that may have been configured. For example, 
+The engine configuration both defines how many save slots should be handled when it looks for saves which is a developer setting, but then 
+it could also store things like the last fullscreen/windowed mode options a player set.
+
+The configuration also contains the tilesize and logical dimensions of the game world screen we want to build out. This is used in conjunction with 
+the relevant level that has been loaded onto the screen.
+
+
+
+After a long think on it, there is enough here to demonstrate opening a game with a tiled map, so this satisfies 
+BB-7. The bones of a level have begun to be thought through, but there's increasingly becoming an obvious need 
+for an engine toolkit and a small level builder utility, I see no reason to not build this from scratch given the 
+spirit of this project. At this point we have established that a level needs to provide the engine information about the tile width and height, 
+level width and height, and a tile representing a row and columns various layers and where the asset for each layer is at. 
+Because manually cutting up tile images and setting up tile data in the level file itself by hand is wildly impractical, 
+it makes sense to add a level editor that supports the basic utility of providing tile location and layer information 
+to the engine at runtime in a simple to read format. This is going to look something like this:
+
+We setup a level folder. This folder contains mainly the assets of the level, and a level file 
+that acts as a setup file for the engine's level, and manifest for the levels assets in one.
+LevelOneFolder [
+    assets: [
+        tileSheet1.bmp
+        tileSheet2.bmp
+        tileSheet3.bmp
+    ],
+    levelFile: {
+        width: 256,
+        height: 256,
+        tileSize: 16,
+        layers: 32,
+        tiles [
+            {
+                layer: 0
+                row: 0
+                column: 0
+                assetName: tileSheet1.bmp
+                assetRow: 0
+                assetColumn: 1
+            },
+            {
+                layer: 1
+                row: 0
+                column: 0
+                assetName: tileSheet2.bmp
+                assetRow: 0
+                assetColumn: 1
+            },
+            ...etc for each tile on the grid, and each layer.
+        ]
+    }
+]
+
+The engine will read the levels assets when doing a read. This lets the engine allow you to provide 
+any number of tilesheets to load tiles from, and it can load these in at runtime based on the levels tile
+data.
+
+The builder itself will doing things slightly differently, it will read the asset folder along with the level files 
+tile size, and provide a panel of tiles to paint with that are cut out to the specified tile size from the 
+various assets in the asset folder.
 

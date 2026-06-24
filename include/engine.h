@@ -1,21 +1,20 @@
 #ifndef ENGINE_H
 #define ENGINE_H
+#include "level.h"
 
 typedef struct GameState {
     int foo;
 } GameState;
 
 typedef struct EngineConfiguration {
-    int logicalGameHeight;
-    int logicalGameWidth;
-    int supportedSaveSlots;
-    int tileHeight;
-    int tileWidth;
+    int32_t     logicalGameHeight;
+    int32_t     logicalGameWidth;
+    int32_t     supportedSaveSlots;
+    int32_t     tileHeight;
+    int32_t     tileWidth;
+    uint32_t    maxLevelHorizontalTiles;
+    uint32_t    maxLevelVerticalTiles;
 } EngineConfiguration;
-
-typedef struct Level {
-    int foo;
-} Level;
 
 typedef struct Menu {
     int foo;

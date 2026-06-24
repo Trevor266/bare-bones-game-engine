@@ -10,6 +10,8 @@
 #define GAME_TILE_HEIGHT                16
 #define LOGICAL_WIDTH                   640
 #define LOGICAL_HEIGHT                  360
+#define MAX_LEVEL_VERTICAL_TILES        256
+#define MAX_LEVEL_HORIZONTAL_TILES      256
 #define SCREEN_TILE_COLS                (LOGICAL_WIDTH / GAME_TILE_WIDTH)
 #define SCREEN_TILE_ROWS                ((LOGICAL_HEIGHT + GAME_TILE_HEIGHT - 1) / GAME_TILE_HEIGHT)
 #define SUPPORTED_SAVE_SLOTS            3
@@ -23,5 +25,7 @@ typedef struct EngineConfigFile {
     int32_t     supportedSaveSlots;
     int32_t     tileHeight;
     int32_t     tileWidth;
+    uint32_t    maxLevelHorizontalTiles;
+    uint32_t    maxLevelVerticalTiles;
 } EngineConfigFile;
 #pragma pack(pop)
