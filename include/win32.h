@@ -27,4 +27,5 @@ void                ProcessKeyUp(WPARAM wParam);
 static              HICON CreateHICONFromPixelBuffer(PixelBuffer *pixelBuffer, BOOL isIcon, int hotspotX, int hotspotY);
 HCURSOR             CreateCursorFromPixelBuffer(PixelBuffer *pixelBuffer, int hotspotX, int hotspotY);
 HICON               CreateIconFromPixelBuffer(PixelBuffer *pixelBuffer);
+void                GenerateRandomLevel(void);
 #endif

@@ -2,7 +2,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h> 
+#include <stdlib.h>
+#include "engine.h"
 #include "keyboard.h"
 #include "mouse.h"
 #include "controller.h"
@@ -46,6 +47,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     windowCreationParams.title = "Bare Bones Engine";
 
     Win32_Start(&windowCreationParams);
+
+    InitializeEngine();
+    GenerateRandomLevel();
 
     // Query for the high resolution performance frequency. This value represents the counts per second of the 
     // counter, this value is determined at system boot and therefore will not change during program runtime. 

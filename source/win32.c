@@ -3,11 +3,18 @@
 #include "win32.h"
 #include "controller.h"
 #include "window.h"
+#include "bitmap.h"
+#include "file.h"
+#include "engine-configuration.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <windows.h>
 #include <Xinput.h>
+#include <time.h>
+
+static uint32_t Backbuffer[LOGICAL_WIDTH * LOGICAL_HEIGHT];
+static bool BackbufferReady = false;
 
 // Lookup for checking a win32 virtual key's mapping in the abstraction layer.
 KeyCode Win32_VirtualKey_KeyCode_Lookup[256];
@@ -39,13 +46,17 @@ void Win32_InitializeWindow(WindowCreationParameters *windowCreationParams)
 
     RegisterClassExA(&windowClass);
 
+	RECT rect = { 0, 0, 1280, 720 };
+	AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+
     PlatformWindowInstance.window = CreateWindowExA(
         0,
         "Window",
         windowCreationParams->title,
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
-        1280, 720,
+        rect.right - rect.left,   // adjusted width
+		rect.bottom - rect.top,   // adjusted height
         NULL, NULL,
         GetModuleHandleA(NULL),
         NULL
@@ -174,7 +185,7 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			else if (xButton == XBUTTON2)
 			{
 				SetMouseDownState(MOUSEBUTTON_FIVE, lParam);
-			}			
+			}
 
 			#if DEBUG
 				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
@@ -214,6 +225,32 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 			// Some keys will break window focus, and it can cause a keyup to be missed and get stuck in a pressed
 			// state, so when the window loses focus, clear keyboard state to avoid this.
 			memset(KeyboardEventState, 0, sizeof(KeyboardEventState));
+			return 0;
+		}
+		case WM_PAINT:
+		{
+			PAINTSTRUCT paintStruct;
+			HDC hdc = BeginPaint(hwnd, &paintStruct);
+
+			if (BackbufferReady)
+			{
+				RECT clientRect;
+				GetClientRect(hwnd, &clientRect);
+				int clientWidth = clientRect.right  - clientRect.left;
+				int clientHeight = clientRect.bottom - clientRect.top;
+
+				BITMAPINFO info              = {0};
+				info.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
+				info.bmiHeader.biWidth       = LOGICAL_WIDTH;
+				info.bmiHeader.biHeight      = -LOGICAL_HEIGHT;
+				info.bmiHeader.biPlanes      = 1;
+				info.bmiHeader.biBitCount    = 32;
+				info.bmiHeader.biCompression = BI_RGB;
+
+				StretchDIBits(hdc, 0, 0, clientWidth, clientHeight, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT, Backbuffer, &info, DIB_RGB_COLORS, SRCCOPY);
+			}
+
+			EndPaint(hwnd, &paintStruct);
 			return 0;
 		}
     }
@@ -522,101 +559,6 @@ KeyCode Win32_VirtualKey_KeyCode_Lookup[256] =
 	[VK_MEDIA_STOP] 		= KEY_STOP,       
 };
 
-void PrintActiveKeyboardState(void)
-{
-    for (int i = 0; i < KEYCODE_COUNT; i++)
-    {
-        if (KeyboardEventState[i].keyPressState != 0)
-        {
-            const char *state = "UNKNOWN";
-
-            if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_PRESSED)
-            {
-                state = "PRESSED";
-            }
-
-            if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_HELD)
-            {
-                state = "HELD";
-            }
-
-            if (KeyboardEventState[i].keyPressState & KEYPRESS_STATE_RELEASED)
-            {
-                state = "RELEASED";
-            }
-
-            printf("KeyCode=%d  Unicode Character=%lc  State=%s\n",
-                   KeyboardEventState[i].keyCode,
-                   (wchar_t)KeyboardEventState[i].unicodeCharacter,
-                   state);
-        }
-    }
-}
-
-void PrintMouseButtonState(MouseButton button)
-{
-    const char *state;
-
-    if (MOUSEBUTTON_IS_RELEASED(MouseButtonEventState[button]))
-    {
-        state = "released";
-    }
-    else if (MOUSEBUTTON_IS_HELD(MouseButtonEventState[button]))
-    {
-        state = "held";
-    }
-    else if (MOUSEBUTTON_IS_PRESSED(MouseButtonEventState[button]))
-    {
-        state = "pressed";
-    }
-    else
-    {
-        state = "down";
-    }
-
-    printf("Button %d %s at %d, %d\n", button, state, 
-           MouseButtonEventState[button].xCoordinate, 
-           MouseButtonEventState[button].yCoordinate);
-}
-
-void PrintControllerState(void)
-{
-    for (int i = 0; i < 4; i++)
-    {
-        if (!ControllerStates[i].Connected)
-		{
-			break;
-		}
-
-        printf("Controller %d:\n", i);
-        printf("  DPAD:         UP=%d DOWN=%d LEFT=%d RIGHT=%d\n",
-            ControllerStates[i].DPAD_UP,
-            ControllerStates[i].DPAD_DOWN,
-            ControllerStates[i].DPAD_LEFT,
-            ControllerStates[i].DPAD_RIGHT);
-        printf("  Buttons:      A=%d B=%d X=%d Y=%d\n",
-            ControllerStates[i].A,
-            ControllerStates[i].B,
-            ControllerStates[i].X,
-            ControllerStates[i].Y);
-        printf("  Shoulders:    L=%d R=%d\n",
-            ControllerStates[i].LEFT_SHOULDER,
-            ControllerStates[i].RIGHT_SHOULDER);
-        printf("  Menu:         START=%d BACK=%d\n",
-            ControllerStates[i].START,
-            ControllerStates[i].BACK);
-        printf("  Triggers:     L=%d R=%d\n",
-            ControllerStates[i].LEFT_TRIGGER,
-            ControllerStates[i].RIGHT_TRIGGER);
-        printf("  Left Stick:   X=%d Y=%d\n",
-            ControllerStates[i].ThumbLX,
-            ControllerStates[i].ThumbLY);
-        printf("  Right Stick:  X=%d Y=%d\n",
-            ControllerStates[i].ThumbRX,
-            ControllerStates[i].ThumbRY);
-    }
-}
-
 static HICON CreateHICONFromPixelBuffer(PixelBuffer *pixelBuffer, BOOL isIcon, int hotspotX, int hotspotY)
 {
 	/*
@@ -660,21 +602,20 @@ static HICON CreateHICONFromPixelBuffer(PixelBuffer *pixelBuffer, BOOL isIcon, i
 
 	// Copy our pixel buffer data into the allocated dib, this must be handled separately if we are using 3 vs. 4 channel bitmaps.
 	uint8_t *pixelBufferData = (uint8_t *)pixelBuffer->pixelData;
-	uint8_t *dibPixels = (uint8_t *)pixels;
 	int pixelCount = pixelBuffer->width * pixelBuffer->height;
 
 	if (pixelBuffer->channelCount == 4)
 	{
-		memcpy(dibPixels, pixelBufferData, pixelCount * 4);
+		memcpy((uint8_t *)pixels, pixelBufferData, pixelCount * 4);
 	}
 	else if (pixelBuffer->channelCount == 3)
 	{
 		for (int i = 0; i < pixelCount; i++)
 		{
-			dibPixels[i * 4 + 0] = pixelBufferData[i * 3 + 0]; 	// R
-			dibPixels[i * 4 + 1] = pixelBufferData[i * 3 + 1]; 	// G
-			dibPixels[i * 4 + 2] = pixelBufferData[i * 3 + 2]; 	// B
-			dibPixels[i * 4 + 3] = 255;             			// A - If we are seeing a 24 bitmap, it doesn't support alpha, full opaque.
+			((uint8_t *)pixels)[i * 4 + 0] = pixelBufferData[i * 3 + 0]; 	// R
+			((uint8_t *)pixels)[i * 4 + 1] = pixelBufferData[i * 3 + 1]; 	// G
+			((uint8_t *)pixels)[i * 4 + 2] = pixelBufferData[i * 3 + 2]; 	// B
+			((uint8_t *)pixels)[i * 4 + 3] = 255;             				// A - If we are seeing a 24 bitmap, it doesn't support alpha, full opaque.
 		}
 	}
 
@@ -711,4 +652,55 @@ HCURSOR CreateCursorFromPixelBuffer(PixelBuffer *pixelBuffer, int hotspotX, int 
 HICON CreateIconFromPixelBuffer(PixelBuffer *pixelBuffer)
 {
     return CreateHICONFromPixelBuffer(pixelBuffer, TRUE, 0, 0);
+}
+
+void GenerateRandomLevel(void)
+{
+    srand((unsigned int)time(NULL));
+
+    Bitmap *sheet = ReadBitmapFromFile("assets/resources/bitmaps/testsheet.bmp");
+    if (!sheet)
+    {
+        OutputDebugStringA("GenerateRandomLevel: ReadBitmapFromFile FAILED\n");
+        return;
+    }
+    OutputDebugStringA("GenerateRandomLevel: ReadBitmapFromFile OK\n");
+
+    int sheetCols = sheet->width  / GAME_TILE_WIDTH;
+    int sheetRows = sheet->height / GAME_TILE_HEIGHT;
+
+    memset(Backbuffer, 0, sizeof(Backbuffer));
+
+    for (int row = 0; row < SCREEN_TILE_ROWS; row++)
+    {
+        for (int col = 0; col < SCREEN_TILE_COLS; col++)
+        {
+            int tileCol = rand() % sheetCols;
+            int tileRow = rand() % sheetRows;
+
+            int srcOriginX = tileCol * GAME_TILE_WIDTH;
+            int srcOriginY = tileRow * GAME_TILE_HEIGHT;
+            int dstOriginX = col    * GAME_TILE_WIDTH;
+            int dstOriginY = row    * GAME_TILE_HEIGHT;
+
+            for (int y = 0; y < GAME_TILE_HEIGHT; y++)
+            {
+                for (int x = 0; x < GAME_TILE_WIDTH; x++)
+                {
+                    int srcIdx = ((srcOriginY + y) * sheet->width + (srcOriginX + x)) * sheet->channels;
+                    uint8_t r = sheet->pixels[srcIdx + 0];
+                    uint8_t g = sheet->pixels[srcIdx + 1];
+                    uint8_t b = sheet->pixels[srcIdx + 2];
+
+                    int dstIdx = (dstOriginY + y) * LOGICAL_WIDTH + (dstOriginX + x);
+                    Backbuffer[dstIdx] = ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
+                }
+            }
+        }
+    }
+
+    free(sheet);
+
+    BackbufferReady = true;
+    InvalidateRect(GET_PLATFORMWINDOW_HWND(), NULL, FALSE);
 }
