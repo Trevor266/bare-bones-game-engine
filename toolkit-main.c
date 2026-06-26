@@ -178,7 +178,6 @@ void CreateDyanmicButton(HWND *buttonHandle, char *buttonText, HWND *parentWindo
     return;
 }
 
-
 /*
     Measures a given string of text in raw pixels. Assumes pixels being provided back from Win32.
 */
