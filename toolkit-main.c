@@ -44,12 +44,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 
             return 0;
         }
+
         case WM_COMMAND:
         {
             if (LOWORD(wp) == 1)
                 MessageBoxA(hwnd, "Button was clicked!", "Hello", MB_OK);
             return 0;
         }
+
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -211,8 +213,8 @@ Dimensions GetWindowDimensions(HWND windowHandle)
 
     // When we get a window rect, it's x/y are not based on the client area of the window, they are based on the raw pixel position 
     // of the monitor, screen space based, we must convert to a client screen space for the caller, we do this by checking if the window is a parent window, 
-    // or if it is a child of a parent. If it's a child window, that means there is a parent window, and we can use this window to we use ScreenToClient to convert
-    // the screen coordinate into a coordinate relative to the parent's client coordinate origin (0,0). 
+    // or if it is a child of a parent. If it's a child window, that means there is a parent window, and we can use ScreenToClient to convert
+    // the parent screen coordinate into a coordinate relative to the parent's client coordinate origin (0,0). 
     // If it's a parent window, we can just return the dimensions as-is, as the screen coordinates are the best we can calculate.
     if (GetWindowRect(windowHandle, &rect))
     {
@@ -222,11 +224,11 @@ Dimensions GetWindowDimensions(HWND windowHandle)
         if (parent)
         {
             // Get the top left point of the screen, we need this to tell windows what we want to convert to client space.
-            // Windows only gives us back screen space based coordinates from 
+            // We check this call here because technically it could fail. To be honest I'm not really sure how it would.
             if (!ScreenToClient(parent, &topLeft)) 
             {
                 // If we're unable to convert screen to client dimensions, then the remaining calculations 
-                // can't be trusted.
+                // can't be trusted so return what we have.
                 return windowDimensions;
             };
 
@@ -257,9 +259,8 @@ void LayoutHomeScreenButtonStack(HWND *parentWindow, LPARAM lp)
     // For the home screen, we have 3 buttons - new, load, settings. These should be centered on the screen and sized appropriately.
     
     // First, generate the 3 buttons we need. We are doing two things here - We are sizing each button with dynamic padding and width/height, 
-    // We then get the dimensions we just generated, and use them to space the next button relative to the first buttons positions. We do this 
-    // for the second button as well. Then, when we go to determine the centered x and y of the button group, we can rest assured knowing each 
-    // button is laid out relative to the previous one.
+    // and then we get the dimensions we just generated, and use them to space the next button relative to the first buttons positions. We do this 
+    // for the second button as well so we can position the third button relatively, and so on.
     CreateDyanmicButton
     (
         &newLevelButtonHandle,
@@ -299,11 +300,11 @@ void LayoutHomeScreenButtonStack(HWND *parentWindow, LPARAM lp)
     Dimensions settingsButtonDimensions = GetWindowDimensions(settingsButtonHandle);
 
     // First, calculate the screen height, plus calculate the top of the first button and the bottom of the last button, then divide the remainder by 2 to 
-    // determine our new Y coordinate we will reposition everything with.
+    // determine our new Y coordinate that we will reposition everything with.
     int centeredYPosition = (clientHeight - ((settingsButtonDimensions.y + settingsButtonDimensions.height) - newLevelButtonDimensions.y)) / 2;
 
-    // These buttons should always be the same width, so to allow the button text to change in the future and for better alignment, 
-    // go through each button, get the widest width, and then set them all to the same width.
+    // The dynamic sizing pass for these buttons gave us the required widths to display properly, but to align these buttons nicely, we get the width of the 
+    // largest button calculated, and size all other buttons to this size so they align evenly.
     int buttonCount = 3;
     int buttonWidths[] = { newLevelButtonDimensions.width, loadLevelButtonDimensions.width, settingsButtonDimensions.width };
     int widestButtonWidth = 0;
