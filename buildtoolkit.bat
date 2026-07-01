@@ -1,13 +1,21 @@
 @echo off
 if not exist build-toolkit mkdir build-toolkit
 
-set Sources=source/keyboard.c source/win32.c source/engine.c source/mouse.c source/controller.c source/window.c source/file.c source/pixelbuffer.c
+set Sources=toolkit/toolkit-main.c toolkit/source/gdifont.c toolkit/source/gdibutton.c
 set ReleaseBuild=%1
 
+:: Compile resources (font, icons, etc.)
+llvm-rc resources.rc
+if %errorlevel% neq 0 (
+    echo Resource compilation failed.
+    pause
+    exit /b 1
+)
+
 if /i "%ReleaseBuild%"=="release" (
-    clang -O2 -D_CRT_SECURE_NO_WARNINGS -Iinclude toolkit-main.c %Sources% -o build-toolkit\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
+    clang -O2 -D_CRT_SECURE_NO_WARNINGS -Iinclude %Sources% resources.res -o build-toolkit\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
 ) else (
-    clang -g -gcodeview -DDEBUG -D_CRT_SECURE_NO_WARNINGS -Iinclude toolkit-main.c %Sources% source/debug.c -o build-toolkit\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
+    clang -g -gcodeview -DDEBUG -D_CRT_SECURE_NO_WARNINGS -Iinclude %Sources% resources.res -o build-toolkit\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
 )
 
 if %errorlevel% neq 0 (
