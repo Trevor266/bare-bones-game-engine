@@ -1,11 +1,11 @@
-#include "keyboard.h"
-#include "mouse.h"
-#include "win32.h"
-#include "controller.h"
-#include "window.h"
-#include "bitmap.h"
-#include "file.h"
-#include "engine-configuration.h"
+#include "../include/keyboard.h"
+#include "../include/mouse.h"
+#include "../include/win32.h"
+#include "../include/controller.h"
+#include "../include/window.h"
+#include "../include/bitmap.h"
+#include "../include/file.h"
+#include "../include/engine-configuration.h"
 
 #include <stdbool.h>
 #include <stdio.h>

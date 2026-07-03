@@ -3,6 +3,7 @@
 #define _BUFFER_H
 
 #include <windows.h>
+#include "../../Shared/common/include/primitivetypes.h"
 
 typedef struct OffscreenBuffer
 {
@@ -14,4 +15,7 @@ typedef struct OffscreenBuffer
     int Pitch; // The width of a given row of pixels in bytes.
 } OffscreenBuffer;
 
+extern OffscreenBuffer WindowBackBuffer;
+
+extern void ClearBufferColor(OffscreenBuffer *Buffer, uint32 Color);
 #endif

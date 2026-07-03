@@ -3,14 +3,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "engine.h"
-#include "keyboard.h"
-#include "mouse.h"
-#include "controller.h"
-#include "file.h"
-#include "win32.h"
-#include "bitmap.h"
-#include "pixelbuffer.h"
+#include "include/engine.h"
+#include "include/keyboard.h"
+#include "include/mouse.h"
+#include "include/controller.h"
+#include "include/file.h"
+#include "include/win32.h"
+#include "include/bitmap.h"
+#include "include/pixelbuffer.h"
 
 // Set the width and height the game will work with internally, this size is used regardless of the actual screen size.
 #define LOGICAL_WIDTH  1280

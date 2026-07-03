@@ -1,8 +1,8 @@
 #include<stdio.h>
 #include <stdlib.h> 
 #include <stdbool.h>
-#include "file.h"
-#include "bitmap.h"
+#include "../include/file.h"
+#include "../include/bitmap.h"
 
 /*
     // A note on C standard library I/O

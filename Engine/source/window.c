@@ -1,3 +1,3 @@
-#include "window.h"
+#include "../include/window.h"
 
 PlatformWindow PlatformWindowInstance;

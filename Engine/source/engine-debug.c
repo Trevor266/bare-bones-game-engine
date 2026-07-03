@@ -1,6 +1,6 @@
-#include "keyboard.h"
-#include "controller.h"
-#include "mouse.h"
+#include "../include/keyboard.h"
+#include "../include/controller.h"
+#include "../include/mouse.h"
 #include <stdio.h>
 
 void PrintMouseButtonState(MouseButton button)

@@ -2,6 +2,10 @@
 #define _PRIMITIVETYPES_H
 #include <stdint.h>
 
+#define internal static 
+#define local_persist static
+#define private_global_variable static
+
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
