@@ -1,7 +1,7 @@
 @echo off
 if not exist build-toolkit mkdir build-toolkit
 
-set Sources=toolkit/toolkit-main.c toolkit/source/gdifont.c toolkit/source/gdibutton.c
+set Sources=toolkit/toolkit-main.c toolkit/source/gdifont.c toolkit/source/gdibutton.c toolkit/source/button.c
 set ReleaseBuild=%1
 
 :: Compile resources (font, icons, etc.)

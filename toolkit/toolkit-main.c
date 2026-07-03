@@ -7,7 +7,15 @@
 #include "include/resource.h"
 #include "include/colors.h"
 #include "include/gdifont.h"
+#include "include/buffer.h"
+#include "include/primitivetypes.h"
+#include "include/button.h"
 #include <stdint.h>
+#include <stdbool.h>
+
+#define internal static 
+#define local_persist static 
+#define global_variable static
 
 #define TILE_SIZE       16
 #define LEVEL_COLS      16
@@ -27,60 +35,55 @@ typedef struct Dimensions
     int y;
 } Dimensions;
 
-typedef struct
-{
-    RECT        rect;
-    const char *label;
-    int         id;
-} EditorButton;
-
 static HWND         windowHandle;
-static EditorButton landingScreenButtons[3];
-static int          landingScreenButtonCount = 3;
 static HANDLE       hCascadiaFontResource = NULL;
 static HFONT        cascasiaRegularFontHandle = NULL;
 
 void            InitializeSystem();
 void            RegisterWindowClass(HINSTANCE hInst);
 Dimensions      GetWindowDimensions(HWND windowHandle);
-
-// DEMO ONLY:
-void            Demo(HDC windowDeviceContextHandle, HWND hwnd, int width, int height);
-void            DemoTwo(void);
-void            PaintWindow(HDC deviceContext, int windowWidth, int windowHeight);
+void            UpdateApplicationWindow(HDC devicecontext, Dimensions clientRect, OffscreenBuffer buffer);
+void            ResizeDIBSection(OffscreenBuffer *buffer, int width, int height);
+void            DrawHomeScreen(void);
 static          BITMAPINFO BitmapInfo;
 static          void *BitmapMemory;
 static          HBITMAP BitmapHandle;
 static          HDC BitmapDeviceContext;
 
+int BackBufferWidth = 0;
+int BackBufferHeight = 0;
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+global_variable bool ApplicationRunning;
+global_variable OffscreenBuffer WindowBackBuffer;
+
+LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
 {
     switch (msg)
     {
         case WM_CREATE:
         {
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            HDC dc = GetDC(hwnd);
-            Demo(dc, hwnd, rect.right - rect.left, rect.bottom - rect.top);
-            ReleaseDC(hwnd, dc);
+            Dimensions Dimension = GetWindowDimensions(windowHandle);
+            HDC dc = GetDC(windowHandle);
+            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
+            ReleaseDC(windowHandle, dc);
 
-            DemoTwo(); 
+            UpdateApplicationWindow(dc, Dimension, WindowBackBuffer); 
             return 0;
         }
 
         case WM_SIZE:
         {
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            HDC dc = GetDC(hwnd);
-            Demo(dc, hwnd, rect.right - rect.left, rect.bottom - rect.top); // recreate DIB at new size
-            ReleaseDC(hwnd, dc);
+            HDC deviceContextHandle = GetDC(windowHandle);
+            Dimensions Dimension = GetWindowDimensions(windowHandle);
+            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
-            DemoTwo();
+            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
+            DrawHomeScreen();
+            ReleaseDC(windowHandle, deviceContextHandle);
 
-            InvalidateRect(hwnd, NULL, TRUE);
+            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
+
+            InvalidateRect(windowHandle, NULL, TRUE);
             return 0;
         }
 
@@ -93,13 +96,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
-            HDC deviceContextHandle = BeginPaint(hwnd, &ps);
+            HDC deviceContextHandle = BeginPaint(windowHandle, &ps);
 
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-            PaintWindow(deviceContextHandle, rect.right - rect.left, rect.bottom - rect.top);
+            Dimensions Dimension = GetWindowDimensions(windowHandle);
+            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
-            EndPaint(hwnd, &ps);
+            EndPaint(windowHandle, &ps);
             return 0;
         }
 
@@ -122,24 +124,77 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             PostQuitMessage(0);
             return 0;
         }
+
+        case WM_CLOSE:
+        {
+            ApplicationRunning = false;
+        }
     }
 
-    return DefWindowProcA(hwnd, msg, wp, lp);
+    return DefWindowProcA(windowHandle, msg, wp, lp);
 }
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
 {
-    InitializeSystem();
-    RegisterWindowClass(hInst);
+    WNDCLASS WindowClass = {0};
 
-    MSG msg;
-    while (GetMessageA(&msg, NULL, 0, 0))
+    ResizeDIBSection(&WindowBackBuffer, 1920, 1080);
+    
+    WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    WindowClass.lpfnWndProc = WndProc;
+    WindowClass.hInstance = hInst;
+    // WindowClass.hIcon; TODO: Set if the mood ever strikes.
+    WindowClass.lpszClassName = WINDOW_CLASS;
+
+    if (RegisterClassA(&WindowClass))
     {
-        TranslateMessage(&msg);
-        DispatchMessageA(&msg);
-    }
+        windowHandle =
+            CreateWindowExA(
+                0,
+                WindowClass.lpszClassName,
+                WINDOW_TITLE,
+                WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                0,
+                0,
+                hInst,
+                0);
 
-    return (int)msg.wParam;
+        if (windowHandle)
+        {
+            HDC DeviceContext = GetDC(windowHandle);
+
+            int XOffset = 0;
+            int YOffset = 0;
+
+            ApplicationRunning = true;
+            while(ApplicationRunning)
+            {
+                MSG Message;
+
+                while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
+                {
+                    if(Message.message == WM_QUIT)
+                    {
+                        ApplicationRunning = false;
+                    }
+                    
+                    TranslateMessage(&Message);
+                    DispatchMessageA(&Message);
+                }
+
+                DrawHomeScreen();
+
+                Dimensions Dimension = GetWindowDimensions(windowHandle);
+                UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);
+            }
+        }
+    }
+    
+    return(0);
 }
 
 void InitializeSystem()
@@ -152,6 +207,7 @@ void InitializeSystem()
 void RegisterWindowClass(HINSTANCE windowInstance)
 {
     WNDCLASSA wc        = {0};
+    wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc      = WndProc;
     wc.hInstance        = windowInstance;
     wc.lpszClassName    = WINDOW_CLASS;
@@ -222,92 +278,114 @@ Dimensions GetWindowDimensions(HWND windowHandle)
     bitmaps to a raw pixel buffer and blitting to screen buffer directly, in theory this would mean the any amount of ui elements could be 
     added for relatively low cost (on their own anyway). This won't be ready for a while, so it lives here.
 */
-typedef uint8_t  u8;
-typedef uint32_t u32;
-typedef int32_t  s32;
-typedef float    r32;
-int BitmapWidth;
-int BitmapHeight;
 
-void Demo(HDC windowDeviceContextHandle, HWND hwnd, int width, int height)
+void ResizeDIBSection(OffscreenBuffer *buffer, int width, int height)
 {
-    if (BitmapHandle)
+    if (buffer->Memory)
     {
-        DeleteObject(BitmapHandle);
+        VirtualFree(buffer->Memory, 0, MEM_RELEASE);
     }
-    else
-    {
-        BitmapDeviceContext = CreateCompatibleDC(0);
-    }
- 
-    BitmapInfo.bmiHeader.biSize        = sizeof(BitmapInfo.bmiHeader);
-    BitmapInfo.bmiHeader.biWidth       = width;
-    BitmapInfo.bmiHeader.biHeight      = -height; // top-down
-    BitmapInfo.bmiHeader.biPlanes      = 1;
-    BitmapInfo.bmiHeader.biBitCount    = 32;
-    BitmapInfo.bmiHeader.biCompression = BI_RGB;
-    BitmapInfo.bmiHeader.biSizeImage      = 0;
-    BitmapInfo.bmiHeader.biXPelsPerMeter  = 0;
-    BitmapInfo.bmiHeader.biYPelsPerMeter  = 0;
-    BitmapInfo.bmiHeader.biClrUsed        = 0;
-    BitmapInfo.bmiHeader.biClrImportant   = 0;
- 
-    BitmapHandle = CreateDIBSection(
-        windowDeviceContextHandle,
-        &BitmapInfo,
-        DIB_RGB_COLORS,
-        &BitmapMemory,
-        0,
-        0);
- 
-    BitmapWidth  = width;
-    BitmapHeight = height;
-}
- 
-static u32 PackColor(u8 r, u8 g, u8 b, u8 a)
-{
-    return ((u32)a << 24) | ((u32)r << 16) | ((u32)g << 8) | (u32)b;
-}
- 
-static void PutPixel(int x, int y, u32 color)
-{
-    if (x < 0 || y < 0 || x >= BitmapWidth || y >= BitmapHeight) return;
-    u32 *pixel = (u32 *)BitmapMemory + y * BitmapWidth + x;
-    *pixel = color;
-}
- 
-static void DrawBackground(void)
-{
-    u8 topR = 0x1A, topG = 0x1B, topB = 0x1E;
-    u8 botR = 0x26, botG = 0x27, botB = 0x2C;
- 
-    for (int y = 0; y < BitmapHeight; ++y)
-    {
-        r32 t = (r32)y / (r32)(BitmapHeight - 1);
-        u8 r = (u8)(topR + (botR - topR) * t);
-        u8 g = (u8)(topG + (botG - topG) * t);
-        u8 b = (u8)(topB + (botB - topB) * t);
-        u32 rowColor = PackColor(r, g, b, 255);
-        for (int x = 0; x < BitmapWidth; ++x)
-            PutPixel(x, y, rowColor);
-    }
-}
- 
-void DemoTwo(void)
-{
-    if (!BitmapMemory) return;
- 
-    DrawBackground();
+
+    // Write into the buffer's OWN Info field — this is what
+    // UpdateApplicationWindow actually passes to StretchDIBits.
+    buffer->Info.bmiHeader.biSize        = sizeof(buffer->Info.bmiHeader);
+    buffer->Info.bmiHeader.biWidth       = width;
+    buffer->Info.bmiHeader.biHeight      = -height; // top-down
+    buffer->Info.bmiHeader.biPlanes      = 1;
+    buffer->Info.bmiHeader.biBitCount    = 32;
+    buffer->Info.bmiHeader.biCompression = BI_RGB;
+
+    buffer->Width  = width;
+    buffer->Height = height;
+
+    BackBufferWidth  = width;
+    BackBufferHeight = height;
+
+    int BytesPerPixel = 4;
+    int BitmapMemorySize = width * height * BytesPerPixel;
+    buffer->Memory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+    buffer->Pitch  = width * BytesPerPixel;
 }
 
-void PaintWindow(HDC deviceContext, int windowWidth, int windowHeight)
+void UpdateApplicationWindow(HDC deviceContextHandle, Dimensions clientRect, OffscreenBuffer buffer)
 {
     StretchDIBits(
-        deviceContext,
-        0, 0, windowWidth, windowHeight,
-        0, 0, BitmapWidth, BitmapHeight,
-        BitmapMemory,
-        &BitmapInfo,
+        deviceContextHandle,
+        0, 0, 
+        clientRect.width,
+        clientRect.height,
+        0, 0, BackBufferWidth, BackBufferHeight,
+        buffer.Memory,
+        &buffer.Info,
         DIB_RGB_COLORS,
-        SRCCOPY);
+        SRCCOPY
+    );
+}
+
+void ClearBufferColor(OffscreenBuffer *Buffer, uint32 Color)
+{
+    // Cast our buffer to a byte sized buffer so we can do pointer arithmetic on it byte by byte.
+    // We will use this to initialize a pointer we do this arithmetic on in the inner for loop, and 
+    // we reinitialize it from this value per row, this is so we are 
+    uint8 *bufferBytes = (uint8 *)Buffer->Memory;
+    
+    // Go through each row of the buffer and get each pixel, then set it's color to the provided clear color.
+    for (int i = 0; i < Buffer->Height; ++i)
+    {
+        uint32 *bufferPixels = (uint32 *)bufferBytes;
+
+        for (int j = 0; j < Buffer->Width; ++j)
+        {
+            // Set the color value, then advance the pointer to the next pixel in the row.
+            *bufferPixels = Color;
+            bufferPixels++;
+        }
+
+        // Advance the buffer byte array to the next row
+        bufferBytes += Buffer->Pitch;
+    }
+}
+
+void DrawHomeScreen(void)
+{
+    ClearBufferColor(&WindowBackBuffer, 0x00FBD2CB);
+    Dimensions windowDimensions = GetWindowDimensions(windowHandle);
+
+    int buttonCount = 3;
+
+    // Use the smaller dimension as the scaling reference, so buttons stay
+    // proportionate whether the window is wide, tall, or square.
+    int referenceDimension = (windowDimensions.width < windowDimensions.height)
+        ? windowDimensions.width
+        : windowDimensions.height;
+
+    int buttonWidth  = (int)(referenceDimension * 0.30f);
+    int buttonHeight = (int)(referenceDimension * 0.08f);
+
+    int buttonSpacing = buttonHeight;
+
+    int buttonStackHeight = (buttonHeight * buttonCount) + ((buttonCount + 1) * buttonSpacing);
+
+    /*
+        Centering the button stack visualized:
+        window = 34 dashes wide
+        button = 14 dashes wide
+        left/right margin = 10 dashes wide
+        -----------------|-----------------
+        **********-------|-------**********             
+        Here, the window is 34 wide, to center the button which is 14 wide, we need 
+        the halfway point of the window, subtracted by half the width of the button to determine the margin for both sides, 
+        which in this case corresponds to the x position as wel
+        To get the centered Y position is the same thing but we need to (height of buttons * count of buttons) / 2 for the y position.
+    */
+    int buttonStackX = (windowDimensions.width  / 2) - (buttonWidth / 2);
+    int buttonStackY = (windowDimensions.height / 2) - (buttonStackHeight / 2);
+
+    DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonStackY, buttonWidth, buttonStackHeight, 0x00BDA9A4);
+
+    for (int i = 0; i < buttonCount; ++i)
+    {
+        int buttonY = buttonStackY + buttonSpacing + (i * (buttonHeight + buttonSpacing));
+        DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonY, buttonWidth, buttonHeight, 0x00F27B66);
+    }
 }
