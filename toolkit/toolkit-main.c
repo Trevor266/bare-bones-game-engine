@@ -1,0 +1,259 @@
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <windowsx.h>
+#include <WinUser.h>
+#include <stdio.h>
+#include <math.h>
+#include "../Shared/common/include/dimensions.h"
+#include "include/homescreen.h"
+#include "include/resource.h"
+#include "include/colors.h"
+#include "include/gdifont.h"
+#include "include/buffer.h"
+#include "../Shared/common/include/primitivetypes.h"
+#include "include/button.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+#define TILE_SIZE       16
+#define LEVEL_COLS      16
+#define LEVEL_ROWS      16
+#define LEVEL_LAYERS    32
+#define ASSET_PANEL_W   160
+#define LAYER_PANEL_W   32
+#define WINDOW_CLASS    "BareBonesLevelEditorWindow"
+#define WINDOW_TITLE    "Bare-Bones Level Editor"
+
+static HWND         windowHandle;
+static HANDLE       hCascadiaFontResource = NULL;
+static HFONT        cascasiaRegularFontHandle = NULL;
+
+void            InitializeSystem();
+void            RegisterWindowClass(HINSTANCE hInst);
+void            UpdateApplicationWindow(HDC devicecontext, Dimensions clientRect, OffscreenBuffer buffer);
+void            ResizeDIBSection(OffscreenBuffer *buffer, int width, int height);
+static          BITMAPINFO BitmapInfo;
+static          void *BitmapMemory;
+static          HBITMAP BitmapHandle;
+static          HDC BitmapDeviceContext;
+
+int BackBufferWidth = 0;
+int BackBufferHeight = 0;
+
+private_global_variable bool ApplicationRunning;
+
+LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
+{
+    switch (msg)
+    {
+        case WM_CREATE:
+        {
+            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+            HDC dc = GetDC(windowHandle);
+            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
+            ReleaseDC(windowHandle, dc);
+
+            UpdateApplicationWindow(dc, Dimension, WindowBackBuffer); 
+            return 0;
+        }
+
+        case WM_SIZE:
+        {
+            HDC deviceContextHandle = GetDC(windowHandle);
+            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
+
+            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
+            DrawHomeScreen(windowHandle);
+            ReleaseDC(windowHandle, deviceContextHandle);
+
+            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
+
+            InvalidateRect(windowHandle, NULL, TRUE);
+            return 0;
+        }
+
+        case WM_ERASEBKGND:
+        {
+            // Eliminates screen flicker
+            return 1;
+        }
+
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC deviceContextHandle = BeginPaint(windowHandle, &ps);
+
+            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
+
+            EndPaint(windowHandle, &ps);
+            return 0;
+        }
+
+        case WM_MOUSEMOVE:
+        {
+            return 0;
+        }
+
+        case WM_LBUTTONDOWN:
+        {
+            return 0;
+        }
+
+        case WM_COMMAND:
+        {
+        }
+
+        case WM_DESTROY:
+        {
+            PostQuitMessage(0);
+            return 0;
+        }
+
+        case WM_CLOSE:
+        {
+            ApplicationRunning = false;
+        }
+    }
+
+    return DefWindowProcA(windowHandle, msg, wp, lp);
+}
+
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
+{
+    WNDCLASS WindowClass = {0};
+
+    ResizeDIBSection(&WindowBackBuffer, 1920, 1080);
+    
+    WindowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+    WindowClass.lpfnWndProc = WndProc;
+    WindowClass.hInstance = hInst;
+    // WindowClass.hIcon; TODO: Set if the mood ever strikes.
+    WindowClass.lpszClassName = WINDOW_CLASS;
+
+    if (RegisterClassA(&WindowClass))
+    {
+        windowHandle =
+            CreateWindowExA(
+                0,
+                WindowClass.lpszClassName,
+                WINDOW_TITLE,
+                WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                0,
+                0,
+                hInst,
+                0);
+
+        if (windowHandle)
+        {
+            HDC DeviceContext = GetDC(windowHandle);
+
+            int XOffset = 0;
+            int YOffset = 0;
+
+            ApplicationRunning = true;
+            while(ApplicationRunning)
+            {
+                MSG Message;
+
+                while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
+                {
+                    if(Message.message == WM_QUIT)
+                    {
+                        ApplicationRunning = false;
+                    }
+                    
+                    TranslateMessage(&Message);
+                    DispatchMessageA(&Message);
+                }
+
+                DrawHomeScreen(windowHandle);
+
+                Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+                UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);
+            }
+        }
+    }
+    
+    return(0);
+}
+
+void InitializeSystem()
+{
+    // This tells Windows that we don't want it doing dpi conversions for us, we want to be told real pixel sizes and 
+    // work off that. This is limited to Windows 10+.
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+}
+
+void RegisterWindowClass(HINSTANCE windowInstance)
+{
+    WNDCLASSA wc        = {0};
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc      = WndProc;
+    wc.hInstance        = windowInstance;
+    wc.lpszClassName    = WINDOW_CLASS;
+    wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+    wc.hbrBackground    = NULL;
+    RegisterClassA(&wc);
+
+    windowHandle = CreateWindowA(
+        WINDOW_CLASS,
+        WINDOW_TITLE,
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        1920,
+        1080,
+        NULL,
+        NULL,
+        windowInstance,
+        NULL);
+}
+
+void ResizeDIBSection(OffscreenBuffer *buffer, int width, int height)
+{
+    if (buffer->Memory)
+    {
+        VirtualFree(buffer->Memory, 0, MEM_RELEASE);
+    }
+
+    // Write into the buffer's OWN Info field — this is what
+    // UpdateApplicationWindow actually passes to StretchDIBits.
+    buffer->Info.bmiHeader.biSize        = sizeof(buffer->Info.bmiHeader);
+    buffer->Info.bmiHeader.biWidth       = width;
+    buffer->Info.bmiHeader.biHeight      = -height; // top-down
+    buffer->Info.bmiHeader.biPlanes      = 1;
+    buffer->Info.bmiHeader.biBitCount    = 32;
+    buffer->Info.bmiHeader.biCompression = BI_RGB;
+
+    buffer->Width  = width;
+    buffer->Height = height;
+
+    BackBufferWidth  = width;
+    BackBufferHeight = height;
+
+    int BytesPerPixel = 4;
+    int BitmapMemorySize = width * height * BytesPerPixel;
+    buffer->Memory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+    buffer->Pitch  = width * BytesPerPixel;
+}
+
+void UpdateApplicationWindow(HDC deviceContextHandle, Dimensions clientRect, OffscreenBuffer buffer)
+{
+    StretchDIBits(
+        deviceContextHandle,
+        0, 0, 
+        clientRect.width,
+        clientRect.height,
+        0, 0, BackBufferWidth, BackBufferHeight,
+        buffer.Memory,
+        &buffer.Info,
+        DIB_RGB_COLORS,
+        SRCCOPY
+    );
+}

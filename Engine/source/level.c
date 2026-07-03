@@ -1,5 +1,5 @@
-#include "include/level.h"
-#include "include/file.h"
+#include "../include/level.h"
+#include "../include/file.h"
 
 Level *LoadLevel(const char *path)
 {

@@ -1,6 +1,6 @@
-#include "engine.h"
-#include "file.h"
-#include "engine-configuration.h"
+#include "../include/engine.h"
+#include "../include/file.h"
+#include "../include/engine-configuration.h"
 
 #include <stdlib.h>
 
