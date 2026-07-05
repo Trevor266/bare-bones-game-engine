@@ -103,6 +103,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
 		case WM_LBUTTONDOWN:
 		{
 			SetMouseDownState(MOUSEBUTTON_ONE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+            CheckHomescreenClickEvents((int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 
 			#if DEBUG
 				PrintMouseButtonState(MOUSEBUTTON_ONE);

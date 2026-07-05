@@ -1,3 +1,6 @@
+#ifndef _DIMENSIONS_H
+#define _DIMENSIONS_H
+
 typedef struct Dimensions
 {
     int height;
@@ -10,7 +13,7 @@ typedef struct Dimensions
 // This is a quick and dirty way of doing this - If it's win32, include the relevant headers and function stubs.
 #if _WIN32
 #include <windows.h>
-
 extern Dimensions GetWin32WindowDimensions(HWND windowHandle);
+#endif
 
 #endif

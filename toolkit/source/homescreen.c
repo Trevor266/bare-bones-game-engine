@@ -90,3 +90,31 @@ void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font fo
     DrawCustomText(&WindowBackBuffer, &font, "Testing how good this rendering really is....", 30, 200, 0x00FF00FF);
     DrawCustomText(&WindowBackBuffer, &font, "here's a newline to really give it a whirl!", 30, 200 + font.fontSize, 0x0000FFFF);
 }
+
+void CheckHomescreenClickEvents(int hitX, int hitY)
+{
+    for (int buttonId = 0; buttonId < HOMESCREEN_BUTTON_COUNT; ++buttonId)
+    {
+        if (ButtonHitTest(homescreenButtons[buttonId], hitX, hitY))
+        {
+            switch(buttonId)
+            {
+                case NEW_LEVEL_BUTTON_ID:
+                {
+                    MessageBoxW(NULL, L"new level!", L"test", MB_OK);
+                    break;
+                }
+                case LOAD_LEVEL_BUTTON_ID:
+                {
+                    MessageBoxW(NULL, L"load level!", L"test", MB_OK);
+                    break;
+                }
+                case SETTINGS_BUTTON_ID:
+                {
+                    MessageBoxW(NULL, L"settings!", L"test", MB_OK);
+                    break;
+                }
+            }
+        }
+    }
+}

@@ -2,6 +2,18 @@
 // that you provide the proper backbuffer.
 #include "../../Shared/common/include/buffer.h"
 #include "../../Shared/common/include/primitivetypes.h"
+#include "../../Shared/common/include/mouse.h"
+#include "../include/button.h"
+#include <stdbool.h>
+
+bool ButtonHitTest(Button button, int hitX, int hitY)
+{
+    bool passed = 
+        hitX >= button.dimensions.x && hitX <= button.dimensions.x + button.dimensions.width
+        && hitY >= button.dimensions.y && hitY <= button.dimensions.y + button.dimensions.height;
+
+    return passed;
+}
 
 void DrawClientSpaceBox(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, uint32 Color)
 {
