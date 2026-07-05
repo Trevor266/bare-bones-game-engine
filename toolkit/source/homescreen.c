@@ -1,13 +1,14 @@
 #include "../../Shared/common/include/primitivetypes.h"
 #include "../../Shared/common/include/dimensions.h"
-#include "../include/buffer.h"
+#include "../../Shared/common/include/buffer.h"
+#include "../../Shared/common/include/font.h"
 #include "../include/button.h"
 #include "../include/homescreen.h"
 #include <windows.h>
 
+const char *buttonLabels[3] = { "New Level", "Load Level", "Settings" };
 
-
-void DrawHomeScreen(HWND windowHandle)
+void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font font)
 {
     // FIRST - Move window back buffer into a globally available variable in buffer.c, then all future buffers can just be pulled from here.
     ClearBufferColor(&WindowBackBuffer, 0x00FBD2CB);
@@ -24,7 +25,7 @@ void DrawHomeScreen(HWND windowHandle)
     int buttonWidth  = (int)(referenceDimension * 0.30f);
     int buttonHeight = (int)(referenceDimension * 0.08f);
 
-    int buttonSpacing = buttonHeight;
+    int buttonSpacing = buttonHeight / 3;
 
     int buttonStackHeight = (buttonHeight * buttonCount) + ((buttonCount + 1) * buttonSpacing);
 
@@ -49,5 +50,15 @@ void DrawHomeScreen(HWND windowHandle)
     {
         int buttonY = buttonStackY + buttonSpacing + (i * (buttonHeight + buttonSpacing));
         DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonY, buttonWidth, buttonHeight, 0x00F27B66);
+
+        int textWidth = MeasureTextWidth(&font, buttonLabels[i]);
+        int textX = buttonStackX + (buttonWidth / 2) - (textWidth / 2);
+ 
+        int textY = buttonY + (buttonHeight / 2) + font.verticalCenterOffset;
+
+        DrawCustomText(&WindowBackBuffer, &font, buttonLabels[i], textX, textY, 0x00202020);
     }
+    
+    DrawCustomText(&WindowBackBuffer, &font, "Testing how good this rendering really is....", 30, 200, 0x00FF00FF);
+    DrawCustomText(&WindowBackBuffer, &font, "here's a newline to really give it a whirl!", 30, 200 + font.fontSize, 0x0000FFFF);
 }

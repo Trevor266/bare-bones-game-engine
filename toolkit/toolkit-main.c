@@ -8,10 +8,10 @@
 #include "include/homescreen.h"
 #include "include/resource.h"
 #include "include/colors.h"
-#include "include/gdifont.h"
-#include "include/buffer.h"
+#include "../Shared/common/include/buffer.h"
 #include "../Shared/common/include/primitivetypes.h"
 #include "include/button.h"
+#include "../Shared/common/include/font.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -24,9 +24,10 @@
 #define WINDOW_CLASS    "BareBonesLevelEditorWindow"
 #define WINDOW_TITLE    "Bare-Bones Level Editor"
 
-static HWND         windowHandle;
-static HANDLE       hCascadiaFontResource = NULL;
-static HFONT        cascasiaRegularFontHandle = NULL;
+static HWND             windowHandle;
+static HANDLE           hCascadiaFontResource = NULL;
+static HFONT            cascasiaRegularFontHandle = NULL;
+private_global_variable OffscreenBuffer WindowBackBuffer;
 
 void            InitializeSystem();
 void            RegisterWindowClass(HINSTANCE hInst);
@@ -41,6 +42,8 @@ int BackBufferWidth = 0;
 int BackBufferHeight = 0;
 
 private_global_variable bool ApplicationRunning;
+
+static Font CascadiaFont;
 
 LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
 {
@@ -64,7 +67,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
             ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            DrawHomeScreen(windowHandle);
+            DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
             ReleaseDC(windowHandle, deviceContextHandle);
 
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
@@ -122,6 +125,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
 {
+    InitializeSystem();
     WNDCLASS WindowClass = {0};
 
     ResizeDIBSection(&WindowBackBuffer, 1920, 1080);
@@ -172,7 +176,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                     DispatchMessageA(&Message);
                 }
 
-                DrawHomeScreen(windowHandle);
+                DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
 
                 Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
                 UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);
@@ -188,6 +192,8 @@ void InitializeSystem()
     // This tells Windows that we don't want it doing dpi conversions for us, we want to be told real pixel sizes and 
     // work off that. This is limited to Windows 10+.
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+    CascadiaFont = LoadFont("assets/resources/fonts/Cascadia.ttf", 24.0f);
 }
 
 void RegisterWindowClass(HINSTANCE windowInstance)

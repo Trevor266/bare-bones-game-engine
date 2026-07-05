@@ -1,7 +1,5 @@
 #include "../include/buffer.h"
-#include "../../Shared/common/include/primitivetypes.h"
-
-OffscreenBuffer WindowBackBuffer;
+#include "../include/primitivetypes.h"
 
 void ClearBufferColor(OffscreenBuffer *Buffer, uint32 Color)
 {
