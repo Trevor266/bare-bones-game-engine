@@ -1,6 +1,5 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <WinUser.h>
 #include <stdio.h>
 #include <math.h>
@@ -12,6 +11,8 @@
 #include "../Shared/common/include/primitivetypes.h"
 #include "include/button.h"
 #include "../Shared/common/include/font.h"
+#include "../Shared/common/include/mouse.h"
+#include "../Shared/common/include/debug.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -45,7 +46,7 @@ private_global_variable bool ApplicationRunning;
 
 static Font CascadiaFont;
 
-LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
@@ -99,10 +100,112 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
             return 0;
         }
 
-        case WM_LBUTTONDOWN:
-        {
-            return 0;
-        }
+		case WM_LBUTTONDOWN:
+		{
+			SetMouseDownState(MOUSEBUTTON_ONE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_ONE);
+			#endif
+
+			return 0;
+		}
+		case WM_LBUTTONUP:
+		{
+			SetMouseUpState(MOUSEBUTTON_ONE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_ONE);
+			#endif
+
+			return 0;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			SetMouseDownState(MOUSEBUTTON_TWO, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_TWO);
+			#endif
+
+			return 0;
+		}
+		case WM_RBUTTONUP:
+		{
+			SetMouseUpState(MOUSEBUTTON_TWO, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_TWO);
+			#endif
+
+			return 0;
+		}
+		case WM_MBUTTONDOWN:
+		{
+			SetMouseDownState(MOUSEBUTTON_THREE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_THREE);
+			#endif
+
+			return 0;
+		}
+		case WM_MBUTTONUP:
+		{
+			SetMouseUpState(MOUSEBUTTON_THREE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_THREE);
+			#endif
+
+			return 0;
+		}
+		case WM_XBUTTONDOWN:
+		{
+			int xButton = GET_XBUTTON_WPARAM(wParam); 
+
+			if (xButton == XBUTTON1) 
+			{
+				SetMouseDownState(MOUSEBUTTON_FOUR, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}
+			else if (xButton == XBUTTON2)
+			{
+				SetMouseDownState(MOUSEBUTTON_FIVE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}
+
+			#if DEBUG
+				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
+				printf("Mouse %d click triggered, %d, %d\n", 
+					xButton == XBUTTON1 ? 4 : 5,
+					MouseButtonEventState[xMouseButton].xCoordinate, 
+					MouseButtonEventState[xMouseButton].yCoordinate);
+			#endif	
+
+			return 0;
+		}
+		case WM_XBUTTONUP:
+		{
+			int xButton = GET_XBUTTON_WPARAM(wParam); 
+
+			if (xButton == XBUTTON1) 
+			{
+				SetMouseUpState(MOUSEBUTTON_FOUR, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}
+			else if (xButton == XBUTTON2)
+			{
+				SetMouseUpState(MOUSEBUTTON_FIVE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}			
+
+			#if DEBUG
+				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
+				printf("Mouse %d click released, %d, %d\n", 
+					xButton == XBUTTON1 ? 4 : 5,
+					MouseButtonEventState[xMouseButton].xCoordinate, 
+					MouseButtonEventState[xMouseButton].yCoordinate);
+			#endif	
+
+			return 0;
+		}
 
         case WM_COMMAND:
         {
@@ -120,7 +223,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
         }
     }
 
-    return DefWindowProcA(windowHandle, msg, wp, lp);
+    return DefWindowProcA(windowHandle, msg, wParam, lParam);
 }
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
@@ -189,6 +292,11 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
 
 void InitializeSystem()
 {
+    #if DEBUG
+		AllocConsole();
+		freopen("CONOUT$", "w", stdout);
+	#endif
+
     // This tells Windows that we don't want it doing dpi conversions for us, we want to be told real pixel sizes and 
     // work off that. This is limited to Windows 10+.
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);

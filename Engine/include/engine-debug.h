@@ -5,6 +5,5 @@
 
 void PrintControllerState(void);
 void PrintActiveKeyboardState(void);
-void PrintMouseButtonState(MouseButton button);
 
 #endif

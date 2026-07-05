@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "include/engine.h"
 #include "include/keyboard.h"
-#include "include/mouse.h"
+#include "../Shared/common/include/mouse.h"
 #include "include/controller.h"
 #include "include/file.h"
 #include "include/win32.h"

@@ -39,4 +39,7 @@ typedef struct {
 
 extern MouseButtonEvent MouseButtonEventState[MOUSEBUTTON_COUNT];
 
+void SetMouseUpState(MouseButton button, int x, int y);
+void SetMouseDownState(MouseButton button, int x, int y);
+
 #endif

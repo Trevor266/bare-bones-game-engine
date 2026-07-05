@@ -2,7 +2,8 @@
 if not exist build-toolkit mkdir build-toolkit
 
 Set CommonPath=Shared/common/source/
-Set CommonSources=%CommonPath%dimensions.c %CommonPath%buffer.c %CommonPath%font.c
+Set CommonSources=%CommonPath%dimensions.c %CommonPath%buffer.c %CommonPath%font.c %CommonPath%mouse.c
+Set DebugSources=%CommonPath%debug.c
 Set SourcePath=Toolkit/source/
 set Sources=Toolkit/toolkit-main.c %SourcePath%gdifont.c %SourcePath%gdibutton.c %SourcePath%button.c %SourcePath%homescreen.c
 set ReleaseBuild=%1
@@ -18,7 +19,7 @@ if %errorlevel% neq 0 (
 if /i "%ReleaseBuild%"=="release" (
     clang -O2 -D_CRT_SECURE_NO_WARNINGS -Iinclude %Sources% %CommonSources% resources.res -o build-toolkit\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
 ) else (
-    clang -g -gcodeview -DDEBUG -D_CRT_SECURE_NO_WARNINGS -Iinclude %Sources% %CommonSources% resources.res -o build-toolkit\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
+    clang -g -gcodeview -DDEBUG -D_CRT_SECURE_NO_WARNINGS -Iinclude %Sources% %CommonSources% %DebugSources% resources.res -o build-toolkit\main.exe -luser32 -lgdi32 -lxinput -Wl,/subsystem:windows
 )
 
 if %errorlevel% neq 0 (

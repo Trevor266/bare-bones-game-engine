@@ -6,15 +6,36 @@
 #include "../include/homescreen.h"
 #include <windows.h>
 
-const char *buttonLabels[3] = { "New Level", "Load Level", "Settings" };
+extern Button homescreenButtons[HOMESCREEN_BUTTON_COUNT] = 
+{
+    {
+        .text            = "New Level",
+        .textColor       = 0x00202020,
+        .backgroundColor = 0x00F27B66,
+        .hoverColor      = 0,
+        .dimensions      = {0},
+    },
+    {
+        .text            = "Load Level",
+        .textColor       = 0x00202020,
+        .backgroundColor = 0x00F27B66,
+        .hoverColor      = 0,
+        .dimensions      = {0},
+    },
+    {
+        .text            = "Settings",
+        .textColor       = 0x00202020,
+        .backgroundColor = 0x00F27B66,
+        .hoverColor      = 0,
+        .dimensions      = {0},
+    }
+};
 
 void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font font)
 {
     // FIRST - Move window back buffer into a globally available variable in buffer.c, then all future buffers can just be pulled from here.
     ClearBufferColor(&WindowBackBuffer, 0x00FBD2CB);
     Dimensions windowDimensions = GetWin32WindowDimensions(windowHandle);
-
-    int buttonCount = 3;
 
     // Use the smaller dimension as the scaling reference, so buttons maintain 
     // their intended aspect ratio independent of the client aspect ratio.
@@ -27,7 +48,7 @@ void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font fo
 
     int buttonSpacing = buttonHeight / 3;
 
-    int buttonStackHeight = (buttonHeight * buttonCount) + ((buttonCount + 1) * buttonSpacing);
+    int buttonStackHeight = (buttonHeight * HOMESCREEN_BUTTON_COUNT) + ((HOMESCREEN_BUTTON_COUNT + 1) * buttonSpacing);
 
     /*
         Centering the button stack visualized:
@@ -46,17 +67,24 @@ void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font fo
 
     DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonStackY, buttonWidth, buttonStackHeight, 0x00BDA9A4);
 
-    for (int i = 0; i < buttonCount; ++i)
+    //TODO: Find some way to abstract out the font and client box rendering into a single button function call.
+    for (int i = 0; i < HOMESCREEN_BUTTON_COUNT; ++i)
     {
         int buttonY = buttonStackY + buttonSpacing + (i * (buttonHeight + buttonSpacing));
-        DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonY, buttonWidth, buttonHeight, 0x00F27B66);
+        DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonY, buttonWidth, buttonHeight, homescreenButtons[i].backgroundColor);
 
-        int textWidth = MeasureTextWidth(&font, buttonLabels[i]);
+        int textWidth = MeasureTextWidth(&font, homescreenButtons[i].text);
         int textX = buttonStackX + (buttonWidth / 2) - (textWidth / 2);
  
         int textY = buttonY + (buttonHeight / 2) + font.verticalCenterOffset;
 
-        DrawCustomText(&WindowBackBuffer, &font, buttonLabels[i], textX, textY, 0x00202020);
+        DrawCustomText(&WindowBackBuffer, &font, homescreenButtons[i].text, textX, textY, homescreenButtons[i].textColor);
+
+        // Update button dimensions.
+        homescreenButtons[i].dimensions.y           = buttonY;
+        homescreenButtons[i].dimensions.x           = buttonStackX;
+        homescreenButtons[i].dimensions.width       = buttonWidth;
+        homescreenButtons[i].dimensions.height      = buttonHeight;
     }
     
     DrawCustomText(&WindowBackBuffer, &font, "Testing how good this rendering really is....", 30, 200, 0x00FF00FF);
