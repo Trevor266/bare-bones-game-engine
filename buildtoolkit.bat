@@ -2,8 +2,9 @@
 if not exist build-toolkit mkdir build-toolkit
 
 Set CommonPath=Shared/common/source/
-Set CommonSources=%CommonPath%dimensions.c
-set Sources=Toolkit/toolkit-main.c Toolkit/source/gdifont.c Toolkit/source/gdibutton.c Toolkit/source/button.c Toolkit/source/homescreen.c Toolkit/source/buffer.c
+Set CommonSources=%CommonPath%dimensions.c %CommonPath%buffer.c %CommonPath%font.c
+Set SourcePath=Toolkit/source/
+set Sources=Toolkit/toolkit-main.c %SourcePath%gdifont.c %SourcePath%gdibutton.c %SourcePath%button.c %SourcePath%homescreen.c
 set ReleaseBuild=%1
 
 :: Compile resources (font, icons, etc.)

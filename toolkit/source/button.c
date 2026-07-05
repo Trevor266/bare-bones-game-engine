@@ -1,6 +1,6 @@
 // Defines utilities for generating a button in client coordinate space. It is expected 
 // that you provide the proper backbuffer.
-#include "../include/buffer.h"
+#include "../../Shared/common/include/buffer.h"
 #include "../../Shared/common/include/primitivetypes.h"
 
 void DrawClientSpaceBox(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, uint32 Color)
