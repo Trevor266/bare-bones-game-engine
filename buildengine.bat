@@ -4,7 +4,7 @@ if not exist build mkdir build
 Set CommonPath=Shared/common/source/
 Set SourcePath=Engine/source/
 Set DebugSources=%SourcePath%engine-debug.c %CommonPath%debug.c
-Set CommonSources=%CommonPath%dimensions.c %CommonPath%mouse.c
+Set CommonSources=%CommonPath%dimensions.c %CommonPath%mouse.c %CommonPath%primitive_geometry.c
 set Sources=%SourcePath%keyboard.c %SourcePath%win32.c %SourcePath%engine.c %SourcePath%controller.c %SourcePath%window.c %SourcePath%file.c %SourcePath%pixelbuffer.c
 set ReleaseBuild=%1
 

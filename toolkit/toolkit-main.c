@@ -8,7 +8,7 @@
 #include "include/resource.h"
 #include "include/colors.h"
 #include "../Shared/common/include/buffer.h"
-#include "../Shared/common/include/primitivetypes.h"
+#include "../Shared/common/include/primitive_types.h"
 #include "include/button.h"
 #include "../Shared/common/include/font.h"
 #include "../Shared/common/include/mouse.h"

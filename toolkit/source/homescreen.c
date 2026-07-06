@@ -1,4 +1,5 @@
-#include "../../Shared/common/include/primitivetypes.h"
+#include "../../Shared/common/include/primitive_types.h"
+#include "../../Shared/common/include/primitive_geometry.h"
 #include "../../Shared/common/include/dimensions.h"
 #include "../../Shared/common/include/buffer.h"
 #include "../../Shared/common/include/font.h"
@@ -65,13 +66,13 @@ void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font fo
     int buttonStackX = (windowDimensions.width  / 2) - (buttonWidth / 2);
     int buttonStackY = (windowDimensions.height / 2) - (buttonStackHeight / 2);
 
-    DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonStackY, buttonWidth, buttonStackHeight, 0x00BDA9A4);
+    RenderQuad(&WindowBackBuffer, buttonStackX, buttonStackY, buttonWidth, buttonStackHeight, 0x00BDA9A4);
 
     //TODO: Find some way to abstract out the font and client box rendering into a single button function call.
     for (int i = 0; i < HOMESCREEN_BUTTON_COUNT; ++i)
     {
         int buttonY = buttonStackY + buttonSpacing + (i * (buttonHeight + buttonSpacing));
-        DrawClientSpaceBox(&WindowBackBuffer, buttonStackX, buttonY, buttonWidth, buttonHeight, homescreenButtons[i].backgroundColor);
+        RenderQuad(&WindowBackBuffer, buttonStackX, buttonY, buttonWidth, buttonHeight, homescreenButtons[i].backgroundColor);
 
         int textWidth = MeasureTextWidth(&font, homescreenButtons[i].text);
         int textX = buttonStackX + (buttonWidth / 2) - (textWidth / 2);
