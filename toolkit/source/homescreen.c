@@ -66,13 +66,13 @@ void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font fo
     int buttonStackX = (windowDimensions.width  / 2) - (buttonWidth / 2);
     int buttonStackY = (windowDimensions.height / 2) - (buttonStackHeight / 2);
 
-    RenderQuad(&WindowBackBuffer, buttonStackX, buttonStackY, buttonWidth, buttonStackHeight, 0x00BDA9A4);
+    RenderQuad(WindowBackBuffer.Memory, WindowBackBuffer.Width, WindowBackBuffer.Height, WindowBackBuffer.Pitch, buttonStackX, buttonStackY, buttonWidth, buttonStackHeight, 0x00BDA9A4);
 
     //TODO: Find some way to abstract out the font and client box rendering into a single button function call.
     for (int i = 0; i < HOMESCREEN_BUTTON_COUNT; ++i)
     {
         int buttonY = buttonStackY + buttonSpacing + (i * (buttonHeight + buttonSpacing));
-        RenderQuad(&WindowBackBuffer, buttonStackX, buttonY, buttonWidth, buttonHeight, homescreenButtons[i].backgroundColor);
+        RenderQuad(WindowBackBuffer.Memory, WindowBackBuffer.Width, WindowBackBuffer.Height, WindowBackBuffer.Pitch, buttonStackX, buttonY, buttonWidth, buttonHeight, homescreenButtons[i].backgroundColor);
 
         int textWidth = MeasureTextWidth(&font, homescreenButtons[i].text);
         int textX = buttonStackX + (buttonWidth / 2) - (textWidth / 2);

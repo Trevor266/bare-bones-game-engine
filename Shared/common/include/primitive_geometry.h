@@ -3,6 +3,6 @@
 
 #include "buffer.h"
 
-void RenderQuad(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, uint32 Color);
+void RenderQuad(void *BufferMemory, int BufferWidth, int BufferHeight, int BufferPitch, int X, int Y, int Width, int Height, uint32 Color);
 
 #endif

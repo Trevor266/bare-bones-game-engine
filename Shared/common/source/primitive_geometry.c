@@ -1,6 +1,7 @@
 #include "../include/primitive_geometry.h"
 
-void RenderQuad(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, uint32 Color)
+// Buffer is expected to be provided as bytes. Writes a colored quad within the specified buffer.
+void RenderQuad(void *BufferMemory, int BufferWidth, int BufferHeight, int BufferPitch, int X, int Y, int Width, int Height, uint32 Color)
 {
     int Right = X + Width;
     int Bottom = Y + Height;
@@ -16,14 +17,14 @@ void RenderQuad(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, ui
         Y = 0;
     }
 
-    if (Right > Buffer->Width)
+    if (Right > BufferWidth)
     {
-        Right = Buffer->Width;
+        Right = BufferWidth;
     }
 
-    if (Bottom > Buffer->Height)
+    if (Bottom > BufferHeight)
     {
-        Bottom = Buffer->Height;
+        Bottom = BufferHeight;
     }
 
     // If either of these is true, nothing will render, don't waste compute.
@@ -35,7 +36,7 @@ void RenderQuad(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, ui
     // Fill out each pixel of the specified box with the provided color.
     for (int PixelY = Y; PixelY < Bottom; ++PixelY)
     {
-        uint8 *Row = (uint8 *)Buffer->Memory + PixelY * Buffer->Pitch;
+        uint8 *Row = (uint8 *)BufferMemory + PixelY * BufferPitch;
         uint32 *Pixel = (uint32 *)Row + X;
 
         for (int PixelX = X; PixelX < Right; ++PixelX)
