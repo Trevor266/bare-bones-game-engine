@@ -3,18 +3,22 @@
 #include "../../Shared/common/include/buffer.h"
 #include "../../Shared/common/include/primitive_types.h"
 #include "../../Shared/common/include/dimensions.h"
+#include "../../Shared/common/include/font.h"
 #include <stdbool.h>
 
 typedef struct Button {
     char *text;
     uint32_t textColor;
     uint32_t backgroundColor;
+    uint32_t borderColor;
+    uint32_t borderWidth;
+    uint32_t borderRadius;
     uint32_t hoverColor;
+    bool hovered;
     Dimensions dimensions;
 } Button;
 
-void DrawClientSpaceBox(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, uint32 Color);
 bool ButtonHitTest(Button button, int hitX, int hitY);
-void RenderButton(Button button);
+void RenderButton(Button button, void *bufferMemory, int bufferWidth, int bufferHeight, int bufferPitch, Font font);
 
 #endif

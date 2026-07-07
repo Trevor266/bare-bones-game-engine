@@ -20,6 +20,6 @@ Font LoadFont(const char *path, float fontSize);
 void FreeFont(Font *font);
 
 int MeasureTextWidth(Font *font, const char *text);
-void DrawCustomText(OffscreenBuffer *buffer, Font *font, const char *text, int x, int y, uint32_t colorRGB);
+void DrawCustomText(void *BufferMemory, int BufferWidth, int BufferHeight, int BufferPitch, Font *font, const char *text, int x, int y, uint32 colorRGB);
 
 #endif

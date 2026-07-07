@@ -96,7 +96,9 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
         }
 
         case WM_MOUSEMOVE:
-        {
+        {            
+            SetActiveMouseCoordinate((int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
             return 0;
         }
 
@@ -178,8 +180,8 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
 				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
 				printf("Mouse %d click triggered, %d, %d\n", 
 					xButton == XBUTTON1 ? 4 : 5,
-					MouseButtonEventState[xMouseButton].xCoordinate, 
-					MouseButtonEventState[xMouseButton].yCoordinate);
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
 			#endif	
 
 			return 0;
@@ -201,8 +203,8 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
 				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
 				printf("Mouse %d click released, %d, %d\n", 
 					xButton == XBUTTON1 ? 4 : 5,
-					MouseButtonEventState[xMouseButton].xCoordinate, 
-					MouseButtonEventState[xMouseButton].yCoordinate);
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
 			#endif	
 
 			return 0;

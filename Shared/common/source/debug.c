@@ -8,15 +8,15 @@ void PrintMouseButtonState(MouseButton button)
 {
     const char *state;
 
-    if (MOUSEBUTTON_IS_RELEASED(MouseButtonEventState[button]))
+    if (MOUSEBUTTON_IS_RELEASED(MouseButtonEventState.buttonState[button]))
     {
         state = "released";
     }
-    else if (MOUSEBUTTON_IS_HELD(MouseButtonEventState[button]))
+    else if (MOUSEBUTTON_IS_HELD(MouseButtonEventState.buttonState[button]))
     {
         state = "held";
     }
-    else if (MOUSEBUTTON_IS_PRESSED(MouseButtonEventState[button]))
+    else if (MOUSEBUTTON_IS_PRESSED(MouseButtonEventState.buttonState[button]))
     {
         state = "pressed";
     }
@@ -26,8 +26,8 @@ void PrintMouseButtonState(MouseButton button)
     }
 
     printf("Button %d %s at %d, %d\n", button, state, 
-           MouseButtonEventState[button].xCoordinate, 
-           MouseButtonEventState[button].yCoordinate);
+           MouseButtonEventState.buttonState[button].xCoordinate, 
+           MouseButtonEventState.buttonState[button].yCoordinate);
 }
 
 #endif

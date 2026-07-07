@@ -37,9 +37,16 @@ typedef struct {
     int16_t         yCoordinate;           // Y coordinate of the window click.
 } MouseButtonEvent;
 
-extern MouseButtonEvent MouseButtonEventState[MOUSEBUTTON_COUNT];
+typedef struct MouseState {
+    uint16_t            lastX;
+    uint16_t            lastY;
+    MouseButtonEvent    buttonState[MOUSEBUTTON_COUNT];
+} MouseState;
 
-void SetMouseUpState(MouseButton button, int x, int y);
-void SetMouseDownState(MouseButton button, int x, int y);
+extern MouseState MouseButtonEventState;
+
+void SetActiveMouseCoordinate(int16_t x, int16_t y);
+void SetMouseUpState(MouseButton button, int16_t x, int16_t y);
+void SetMouseDownState(MouseButton button, int16_t x, int16_t y);
 
 #endif

@@ -193,8 +193,8 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
 				printf("Mouse %d click triggered, %d, %d\n", 
 					xButton == XBUTTON1 ? 4 : 5,
-					MouseButtonEventState[xMouseButton].xCoordinate, 
-					MouseButtonEventState[xMouseButton].yCoordinate);
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
 			#endif	
 
 			return 0;
@@ -216,8 +216,8 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
 				printf("Mouse %d click released, %d, %d\n", 
 					xButton == XBUTTON1 ? 4 : 5,
-					MouseButtonEventState[xMouseButton].xCoordinate, 
-					MouseButtonEventState[xMouseButton].yCoordinate);
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
 			#endif	
 
 			return 0;
@@ -339,9 +339,9 @@ void ClearReleasedMouseButtonsFromMouseButtonState()
 {
 	for (int i = 0; i < MOUSEBUTTON_COUNT; i++)
     {
-        if (MouseButtonEventState[i].buttonState == MOUSEBUTTON_STATE_RELEASED)
+        if (MouseButtonEventState.buttonState[i].buttonState == MOUSEBUTTON_STATE_RELEASED)
         {
-			MouseButtonEventState[i].buttonState = 0;
+			MouseButtonEventState.buttonState[i].buttonState = 0;
 		}
 	}
 }

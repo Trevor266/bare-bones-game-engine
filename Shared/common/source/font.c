@@ -127,12 +127,12 @@ void FreeFont(Font *font)
     font->atlasPixels = NULL;
 }
 
-void DrawCustomText(OffscreenBuffer *Buffer, Font *font, const char *text, int x, int y, uint32 colorRGB)
+void DrawCustomText(void *BufferMemory, int BufferWidth, int BufferHeight, int BufferPitch, Font *font, const char *text, int x, int y, uint32 colorRGB)
 {
     float penX = (float)x;
     float penY = (float)y; // baseline, not top-left
 
-    uint8_t *bufferBytes = (uint8_t *)Buffer->Memory;
+    uint8_t *bufferBytes = (uint8_t *)BufferMemory;
 
     // Use GetPackedQuad to get the bitmap pixels for the next character we need to get.
     for (const char *nextChar = text; *nextChar; nextChar++)
@@ -167,7 +167,7 @@ void DrawCustomText(OffscreenBuffer *Buffer, Font *font, const char *text, int x
         {
             int destinationY = destY0 + glyphRow;
 
-            if (destinationY < 0 || destinationY >= Buffer->Height)
+            if (destinationY < 0 || destinationY >= BufferHeight)
             {
                 continue;
             }
@@ -176,7 +176,7 @@ void DrawCustomText(OffscreenBuffer *Buffer, Font *font, const char *text, int x
             {
                 int destinationX = destX0 + glyphColumn;
 
-                if (destinationX < 0 || destinationX >= Buffer->Width)
+                if (destinationX < 0 || destinationX >= BufferWidth)
                 {
                     continue;
                 }
@@ -194,7 +194,7 @@ void DrawCustomText(OffscreenBuffer *Buffer, Font *font, const char *text, int x
                 }
 
                 // Pitch is in bytes, so index the row via a byte pointer, then treat that row as uint32s.
-                uint32 *destinationRow = (uint32 *)(bufferBytes + destinationY * Buffer->Pitch);
+                uint32 *destinationRow = (uint32 *)(bufferBytes + destinationY * BufferPitch);
                 uint32 *destinationPixel = &destinationRow[destinationX];
 
                 uint8_t textColorR = (colorRGB >> 16) & 0xFF;
