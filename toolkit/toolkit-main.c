@@ -42,7 +42,13 @@ static          HDC BitmapDeviceContext;
 int BackBufferWidth = 0;
 int BackBufferHeight = 0;
 
+typedef enum ApplicationScreens {
+    HOME = 0,
+    EDITOR = 1
+} ApplicationScreens;
+
 private_global_variable bool ApplicationRunning;
+private_global_variable int CurrentApplicationScreen = HOME;
 
 static Font CascadiaFont;
 
@@ -282,7 +288,15 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                     DispatchMessageA(&Message);
                 }
 
-                DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
+                switch (CurrentApplicationScreen)
+                {
+                    case HOME:
+                        DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
+                        break;
+                    case EDITOR:
+                        break;
+                }
+                
 
                 Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
                 UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);

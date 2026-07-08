@@ -1,3 +1,4 @@
+#include <stdlib.h> 
 #include "../include/level.h"
 #include "../include/file.h"
 
@@ -39,12 +40,13 @@ Level *LoadLevel(const char *path)
         free(filename);
     }
 
+    // TODO: Update this to pull the level tile count from the level file itself, the engine probably doesn't need to declare a max tile count of any kind.
     // Allocate memory for the level tiles.
-    int levelTileCount = GameEngine.configuration->maxLevelHorizontalTiles * GameEngine.configuration->maxLevelVerticalTiles * levelFileHeader.layerCount;
-    level->tiles  = malloc(levelTileCount * sizeof(TileSheetTile));
+    //int levelTileCount = GameEngine.configuration->maxLevelHorizontalTiles * GameEngine.configuration->maxLevelVerticalTiles * levelFileHeader.layerCount;
+    //level->tiles  = malloc(levelTileCount * sizeof(TileSheetTile));
 
 
-    fread(level->tiles, sizeof(TileSheetTile), levelTileCount, levelFile);
+    //fread(level->tiles, sizeof(TileSheetTile), levelTileCount, levelFile);
 
     fclose(levelFile);
     return level;

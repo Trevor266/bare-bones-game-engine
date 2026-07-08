@@ -1,6 +1,6 @@
 #ifndef ENGINE_H
 #define ENGINE_H
-#include "level.h"
+#include "../../Shared/common/include/level.h"
 
 typedef struct GameState {
     int foo;

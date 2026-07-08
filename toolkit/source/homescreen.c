@@ -85,7 +85,6 @@ void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font fo
 
     RenderQuad(WindowBackBuffer.Memory, WindowBackBuffer.Width, WindowBackBuffer.Height, WindowBackBuffer.Pitch, buttonStackX, buttonStackY, buttonStackWidth, buttonStackHeight, 8, 0x00FFE5E0);
 
-    //TODO: Find some way to abstract out the font and client box rendering into a single button function call.
     for (int i = 0; i < HOMESCREEN_BUTTON_COUNT; ++i)
     {
         int buttonY = buttonStackY + buttonSpacing + (i * (buttonHeight + buttonSpacing));
@@ -100,8 +99,6 @@ void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font fo
         RenderButton(homescreenButtons[i], WindowBackBuffer.Memory, WindowBackBuffer.Width, WindowBackBuffer.Height, WindowBackBuffer.Pitch, font);
     }
     
-    DrawCustomText(WindowBackBuffer.Memory, WindowBackBuffer.Width, WindowBackBuffer.Height, WindowBackBuffer.Pitch, &font, "Testing how good this rendering really is....", 30, 200, 0x00FF00FF);
-    DrawCustomText(WindowBackBuffer.Memory, WindowBackBuffer.Width, WindowBackBuffer.Height, WindowBackBuffer.Pitch, &font, "here's a newline to really give it a whirl!", 30, 200 + font.fontSize, 0x0000FFFF);
 }
 
 void CheckHomescreenClickEvents(int hitX, int hitY)
@@ -114,7 +111,7 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
             {
                 case NEW_LEVEL_BUTTON_ID:
                 {
-                    MessageBoxW(NULL, L"new level!", L"test", MB_OK);
+                    
                     break;
                 }
                 case LOAD_LEVEL_BUTTON_ID:

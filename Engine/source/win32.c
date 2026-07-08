@@ -5,8 +5,8 @@
 #include "../include/win32.h"
 #include "../include/controller.h"
 #include "../include/window.h"
-#include "../include/bitmap.h"
-#include "../include/file.h"
+#include "../../Shared/common/include/bitmap.h"
+#include "../../Shared/common/include/file.h"
 #include "../include/engine-configuration.h"
 
 #include <stdbool.h>

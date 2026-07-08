@@ -1,7 +1,6 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 #include "bitmap.h"
-#include "engine.h"
 #include <stdint.h>
 
 #define LEVEL_FILE_SIGNATURE 0x454C564C // ELVL
