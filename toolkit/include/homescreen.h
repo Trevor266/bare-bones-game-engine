@@ -12,7 +12,8 @@
 
 extern Button homescreenButtons[HOMESCREEN_BUTTON_COUNT];
 
-void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font font);
+void DrawHomeScreen(OffscreenBuffer WindowBackBuffer, Font font);
 void CheckHomescreenClickEvents(int hitX, int hitY);
+INT_PTR CALLBACK NewLevelNameDialogProc(HWND dialogHandle, UINT message, WPARAM wParam, LPARAM lParam);
 
 #endif

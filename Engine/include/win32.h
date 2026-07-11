@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <stdbool.h>
 #include "keyboard.h"
-#include "window.h"
+#include "../../Shared/common/include/window.h"
 
 extern KeyCode     Win32_VirtualKey_KeyCode_Lookup[256];
 

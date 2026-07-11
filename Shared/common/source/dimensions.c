@@ -3,7 +3,7 @@
 #ifdef _WIN32
 #include <windows.h>
 
-Dimensions GetWin32WindowDimensions(HWND windowHandle)
+Dimensions GetWin32WindowDimensions()
 {
     Dimensions windowDimensions = {0};
     RECT rect;
@@ -13,9 +13,9 @@ Dimensions GetWin32WindowDimensions(HWND windowHandle)
     // or if it is a child of a parent. If it's a child window, that means there is a parent window, and we can use ScreenToClient to convert
     // the parent screen coordinate into a coordinate relative to the parent's client coordinate origin (0,0). 
     // If it's a parent window, we can just return the dimensions as-is, as the screen coordinates are the best we can calculate.
-    if (GetWindowRect(windowHandle, &rect))
+    if (GetWindowRect(PlatformWindowInstance.window, &rect))
     {
-        HWND parent = GetParent(windowHandle);
+        HWND parent = GetParent(PlatformWindowInstance.window);
         POINT topLeft = { rect.left, rect.top };
 
         if (parent)

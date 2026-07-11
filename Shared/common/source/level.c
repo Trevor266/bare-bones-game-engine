@@ -1,53 +1,56 @@
-#include <stdlib.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <windows.h>
 #include "../include/level.h"
 #include "../include/file.h"
 
-Level *LoadLevel(const char *path)
+Level *CreateLevel(
+    const char *name,
+    uint8_t layerCount,
+    uint16_t tileWidth,
+    uint16_t tileHeight,
+    uint16_t levelWidth,
+    uint16_t levelHeight
+)
 {
-    // Load the specified level file.
-    FILE *levelFile = fopen(path, "rb");
-    if (!levelFile)
-    {
-         return NULL;
-    }
+    char folderPath[512];
+    snprintf(folderPath, sizeof(folderPath), "%s%s", LEVEL_BASE_PATH, name);
 
-    // Next validate the header signature and get level information from the header.
-    LevelFileHeader levelFileHeader;
-    fread(&levelFileHeader, sizeof(LevelFileHeader), 1, levelFile);
-
-    if (levelFileHeader.signature != LEVEL_FILE_SIGNATURE) 
+    if (CreateNewLevelFolder(folderPath) == 0)
     {
-        fclose(levelFile);
         return NULL;
     }
 
-    // Allocate level memory, and set the header fields.
+    char filePath[600];
+    snprintf(filePath, sizeof(filePath), "%s/%s.bbl", folderPath, name);
+
+    LevelFileHeader header = {
+        .signature   = LEVEL_FILE_SIGNATURE,
+        .levelWidth  = levelWidth,
+        .levelHeight = levelHeight,
+        .tileWidth   = (uint8_t)tileWidth,
+        .tileHeight  = (uint8_t)tileHeight,
+        .layerCount  = layerCount,
+        .sheetCount  = 0,
+        .tileCount   = 0
+    };
+
+    FILE *file = fopen(filePath, "wb");
+    fwrite(&header, sizeof(LevelFileHeader), 1, file);
+    fclose(file);
+
     Level *level = malloc(sizeof(Level));
-    level->layerCount = levelFileHeader.layerCount;
-    level->sheetCount = levelFileHeader.sheetCount;
-    level->sheets     = malloc(levelFileHeader.sheetCount * sizeof(Bitmap *));
+    level->levelWidth    = levelWidth;
+    level->levelHeight   = levelHeight;
+    level->tileWidth     = tileWidth;
+    level->tileHeight    = tileHeight;
+    level->layerCount    = layerCount;
+    level->sheetCount    = 0;
+    level->tileCount     = 0;
+    level->sheets        = NULL;
+    level->sheetMetaData = NULL;
+    level->tiles         = NULL;
 
-    for (int i = 0; i < levelFileHeader.sheetCount; i++)
-    {
-        uint16_t nameLength;
-        fread(&nameLength, sizeof(uint16_t), 1, levelFile);
-
-        char *filename = malloc(nameLength + 1);
-        fread(filename, 1, nameLength, levelFile);
-        filename[nameLength] = '\0';
-
-        level->sheets[i] = ReadBitmapFromFile(filename);
-        free(filename);
-    }
-
-    // TODO: Update this to pull the level tile count from the level file itself, the engine probably doesn't need to declare a max tile count of any kind.
-    // Allocate memory for the level tiles.
-    //int levelTileCount = GameEngine.configuration->maxLevelHorizontalTiles * GameEngine.configuration->maxLevelVerticalTiles * levelFileHeader.layerCount;
-    //level->tiles  = malloc(levelTileCount * sizeof(TileSheetTile));
-
-
-    //fread(level->tiles, sizeof(TileSheetTile), levelTileCount, levelFile);
-
-    fclose(levelFile);
     return level;
 }

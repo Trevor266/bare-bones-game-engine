@@ -2,7 +2,7 @@
 if not exist build-toolkit mkdir build-toolkit
 
 Set CommonPath=Shared/common/source/
-Set CommonSources=%CommonPath%dimensions.c %CommonPath%buffer.c %CommonPath%font.c %CommonPath%mouse.c %CommonPath%primitive_geometry.c
+Set CommonSources=%CommonPath%dimensions.c %CommonPath%buffer.c %CommonPath%font.c %CommonPath%mouse.c %CommonPath%primitive_geometry.c %CommonPath%level.c %CommonPath%file.c %CommonPath%window.c  %CommonPath%pixelbuffer.c
 Set DebugSources=%CommonPath%debug.c
 Set SourcePath=Toolkit/source/
 set Sources=Toolkit/toolkit-main.c %SourcePath%gdifont.c %SourcePath%gdibutton.c %SourcePath%button.c %SourcePath%homescreen.c

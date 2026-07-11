@@ -4,7 +4,7 @@
 #include "../include/keyboard.h"
 #include "../include/win32.h"
 #include "../include/controller.h"
-#include "../include/window.h"
+#include "../../Shared/common/include/window.h"
 #include "../../Shared/common/include/bitmap.h"
 #include "../../Shared/common/include/file.h"
 #include "../include/engine-configuration.h"

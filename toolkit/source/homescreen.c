@@ -4,9 +4,17 @@
 #include "../../Shared/common/include/buffer.h"
 #include "../../Shared/common/include/font.h"
 #include "../../Shared/common/include/mouse.h"
+#include "../../Shared/common/include/level.h"
+#include "../../Shared/common/include/window.h"
 #include "../include/button.h"
 #include "../include/homescreen.h"
 #include <windows.h>
+#include "../include/resource.h"
+
+typedef struct {
+    char *buffer;
+    size_t bufferSize;
+} NewLevelNameParams;
 
 Button homescreenButtons[HOMESCREEN_BUTTON_COUNT] = 
 {
@@ -45,11 +53,11 @@ Button homescreenButtons[HOMESCREEN_BUTTON_COUNT] =
     }
 };
 
-void DrawHomeScreen(HWND windowHandle, OffscreenBuffer WindowBackBuffer, Font font)
+void DrawHomeScreen(OffscreenBuffer WindowBackBuffer, Font font)
 {
     // FIRST - Move window back buffer into a globally available variable in buffer.c, then all future buffers can just be pulled from here.
     ClearBufferColor(&WindowBackBuffer, 0x00FBD2CB);
-    Dimensions windowDimensions = GetWin32WindowDimensions(windowHandle);
+    Dimensions windowDimensions = GetWin32WindowDimensions();
 
     // Use the smaller dimension as the scaling reference, so buttons maintain 
     // their intended aspect ratio independent of the client aspect ratio.
@@ -111,7 +119,18 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
             {
                 case NEW_LEVEL_BUTTON_ID:
                 {
-                    
+                    char levelName[LEVEL_NAME_MAX] = {0};
+                    NewLevelNameParams params = { .buffer = levelName, .bufferSize = sizeof(levelName) };
+
+                    INT_PTR result = DialogBoxParamA(
+                        GetModuleHandle(NULL),
+                        MAKEINTRESOURCE(IDD_NEW_LEVEL_NAME),
+                        PlatformWindowInstance.window,
+                        NewLevelNameDialogProc,
+                        (LPARAM)&params
+                    );
+
+                    CreateLevel(params.buffer, 32, 16, 16, 4096, 4096);
                     break;
                 }
                 case LOAD_LEVEL_BUTTON_ID:
@@ -127,4 +146,42 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
             }
         }
     }
+}
+
+INT_PTR CALLBACK NewLevelNameDialogProc(HWND dialogHandle, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+        case WM_INITDIALOG:
+        {
+            SetWindowLongPtrA(dialogHandle, GWLP_USERDATA, (LONG_PTR)lParam);
+            SetFocus(GetDlgItem(dialogHandle, IDC_LEVEL_NAME_EDIT));
+            return (INT_PTR)FALSE;
+        }
+        case WM_COMMAND:
+        {
+            switch (LOWORD(wParam))
+            {
+                case IDOK:
+                {
+                    NewLevelNameParams *params =(NewLevelNameParams *)GetWindowLongPtrA(dialogHandle, GWLP_USERDATA);
+
+                    if (params != NULL)
+                    {
+                        GetDlgItemTextA(dialogHandle, IDC_LEVEL_NAME_EDIT, params->buffer, (int)params->bufferSize);
+                    }
+
+                    EndDialog(dialogHandle, (INT_PTR)IDOK);
+                    return (INT_PTR)TRUE;
+                }
+                case IDCANCEL:
+                {
+                    EndDialog(dialogHandle, (INT_PTR)IDCANCEL);
+                    return (INT_PTR)TRUE;
+                }
+            }
+            break;
+        }
+    }
+    return (INT_PTR)FALSE;
 }

@@ -13,6 +13,9 @@
 #include "../Shared/common/include/font.h"
 #include "../Shared/common/include/mouse.h"
 #include "../Shared/common/include/debug.h"
+#include "../Shared/common/include/level.h"
+#include "../Shared/common/include/file.h"
+#include "../Shared/common/include/window.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -25,13 +28,11 @@
 #define WINDOW_CLASS    "BareBonesLevelEditorWindow"
 #define WINDOW_TITLE    "Bare-Bones Level Editor"
 
-static HWND             windowHandle;
 static HANDLE           hCascadiaFontResource = NULL;
 static HFONT            cascasiaRegularFontHandle = NULL;
 private_global_variable OffscreenBuffer WindowBackBuffer;
 
 void            InitializeSystem();
-void            RegisterWindowClass(HINSTANCE hInst);
 void            UpdateApplicationWindow(HDC devicecontext, Dimensions clientRect, OffscreenBuffer buffer);
 void            ResizeDIBSection(OffscreenBuffer *buffer, int width, int height);
 static          BITMAPINFO BitmapInfo;
@@ -58,27 +59,27 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
     {
         case WM_CREATE:
         {
-            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+            PlatformWindowInstance.window = windowHandle;
+            Dimensions Dimension = GetWin32WindowDimensions();
             HDC dc = GetDC(windowHandle);
-            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            ReleaseDC(windowHandle, dc);
 
-            UpdateApplicationWindow(dc, Dimension, WindowBackBuffer); 
+            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
+            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            UpdateApplicationWindow(dc, Dimension, WindowBackBuffer);
+            ReleaseDC(windowHandle, dc);
             return 0;
         }
 
         case WM_SIZE:
         {
             HDC deviceContextHandle = GetDC(windowHandle);
-            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
-            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
+            Dimensions Dimension = GetWin32WindowDimensions();
 
             ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
-            ReleaseDC(windowHandle, deviceContextHandle);
-
+            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
+            ReleaseDC(windowHandle, deviceContextHandle);
             InvalidateRect(windowHandle, NULL, TRUE);
             return 0;
         }
@@ -94,7 +95,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
             PAINTSTRUCT ps;
             HDC deviceContextHandle = BeginPaint(windowHandle, &ps);
 
-            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+            Dimensions Dimension = GetWin32WindowDimensions();
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
             EndPaint(windowHandle, &ps);
@@ -250,7 +251,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
 
     if (RegisterClassA(&WindowClass))
     {
-        windowHandle =
+        PlatformWindowInstance.window =
             CreateWindowExA(
                 0,
                 WindowClass.lpszClassName,
@@ -265,9 +266,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                 hInst,
                 0);
 
-        if (windowHandle)
+        if (PlatformWindowInstance.window)
         {
-            HDC DeviceContext = GetDC(windowHandle);
+            HDC DeviceContext = GetDC(PlatformWindowInstance.window);
 
             int XOffset = 0;
             int YOffset = 0;
@@ -291,14 +292,14 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                 switch (CurrentApplicationScreen)
                 {
                     case HOME:
-                        DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
+                        DrawHomeScreen(WindowBackBuffer, CascadiaFont);
                         break;
                     case EDITOR:
                         break;
                 }
                 
 
-                Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+                Dimensions Dimension = GetWin32WindowDimensions();
                 UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);
             }
         }
@@ -319,31 +320,6 @@ void InitializeSystem()
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     CascadiaFont = LoadFont("assets/resources/fonts/Cascadia.ttf", 24.0f);
-}
-
-void RegisterWindowClass(HINSTANCE windowInstance)
-{
-    WNDCLASSA wc        = {0};
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc      = WndProc;
-    wc.hInstance        = windowInstance;
-    wc.lpszClassName    = WINDOW_CLASS;
-    wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground    = NULL;
-    RegisterClassA(&wc);
-
-    windowHandle = CreateWindowA(
-        WINDOW_CLASS,
-        WINDOW_TITLE,
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        1920,
-        1080,
-        NULL,
-        NULL,
-        windowInstance,
-        NULL);
 }
 
 void ResizeDIBSection(OffscreenBuffer *buffer, int width, int height)

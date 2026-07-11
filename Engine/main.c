@@ -10,7 +10,7 @@
 #include "../Shared/common/include/file.h"
 #include "include/win32.h"
 #include "../Shared/common/include/bitmap.h"
-#include "include/pixelbuffer.h"
+#include "../Shared/common/include/pixelbuffer.h"
 
 // Set the width and height the game will work with internally, this size is used regardless of the actual screen size.
 #define LOGICAL_WIDTH  1280
