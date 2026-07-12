@@ -14,8 +14,11 @@ Level *CreateLevel(
     uint16_t levelHeight
 )
 {
+    char basePath[MAX_PATH];
+    GetExecutableWorkingDirectory(basePath, sizeof(basePath), LEVEL_BASE_PATH);
+
     char folderPath[512];
-    snprintf(folderPath, sizeof(folderPath), "%s%s", LEVEL_BASE_PATH, name);
+    snprintf(folderPath, sizeof(folderPath), "%s%s", basePath, name);
 
     if (CreateNewLevelFolder(folderPath) == 0)
     {
@@ -60,6 +63,7 @@ bool LevelExists(char *levelName)
     char basePath[MAX_PATH];
     GetExecutableWorkingDirectory(basePath, sizeof(basePath), LEVEL_BASE_PATH);
     strcat_s(basePath, sizeof(basePath), levelName);
+
     DWORD dwAttrib = GetFileAttributes((LPCSTR)basePath);
 
     return (dwAttrib != INVALID_FILE_ATTRIBUTES &&

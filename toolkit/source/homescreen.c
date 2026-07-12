@@ -132,7 +132,7 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
                         (LPARAM)&params
                     );
 
-                    if (LevelExists(params.buffer))
+                    if (LevelExists(params.buffer) && params.buffer[0] != '\0')
                     {
                         wchar_t message[512];
                         wchar_t caption[512];
