@@ -54,3 +54,14 @@ Level *CreateLevel(
 
     return level;
 }
+
+bool LevelExists(char *levelName)
+{
+    char basePath[MAX_PATH];
+    GetExecutableWorkingDirectory(basePath, sizeof(basePath), LEVEL_BASE_PATH);
+    strcat_s(basePath, sizeof(basePath), levelName);
+    DWORD dwAttrib = GetFileAttributes((LPCSTR)basePath);
+
+    return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+        (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}

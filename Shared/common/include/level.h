@@ -2,6 +2,7 @@
 #define LEVEL_H
 #include "bitmap.h"
 #include "tile.h"
+#include <stdbool.h>
 #include <stdint.h>
 
 #define LEVEL_FILE_SIGNATURE            0x454C564C // ELVL
@@ -53,6 +54,7 @@ typedef struct Level {
     GameTile                    *tiles;          // tileCount entries
 } Level;
 
+bool LevelExists(char *levelName);
 Level *LoadLevel(const char *path);
 Level *CreateLevel(const char *name, uint8_t layerCount, uint16_t tileWidth, uint16_t tileHeight, uint16_t levelWidth, uint16_t levelHeight);
 

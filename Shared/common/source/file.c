@@ -4,6 +4,7 @@
 #include <windows.h>
 #include "../include/file.h"
 #include "../include/bitmap.h"
+#include "../include/level.h"
 
 /*
     // A note on C standard library I/O
@@ -193,8 +194,20 @@ static long GetFileBufferSize(FILE *fileHandle)
 int CreateNewLevelFolder(const char *directoryRootPath)
 {
     char basePath[MAX_PATH];
-    GetExecutableWorkingDirectory(basePath, sizeof(basePath), LEVEL_PATH);
-    return CreateDirectoryA(directoryRootPath, NULL) == TRUE;
+    GetExecutableWorkingDirectory(basePath, sizeof(basePath), LEVEL_BASE_PATH);
+
+    if (!CreateDirectoryA(directoryRootPath, NULL))
+    {
+        DWORD error = GetLastError();
+
+        if (error != ERROR_ALREADY_EXISTS)
+        {
+            return FALSE;
+        }
+    }
+
+    // We allow overwriting an existing level folder from dialog prompt, so only fail if that was not the error we got.
+    return TRUE;
 }
 
 // Passes back a char* containing the absolute path minus the executable file

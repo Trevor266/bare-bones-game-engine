@@ -9,7 +9,9 @@
 #include "../include/button.h"
 #include "../include/homescreen.h"
 #include <windows.h>
+#include <wchar.h>
 #include "../include/resource.h"
+#include "../../Shared/common/include/file.h"
 
 typedef struct {
     char *buffer;
@@ -130,7 +132,30 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
                         (LPARAM)&params
                     );
 
-                    CreateLevel(params.buffer, 32, 16, 16, 4096, 4096);
+                    if (LevelExists(params.buffer))
+                    {
+                        wchar_t message[512];
+                        wchar_t caption[512];
+                        swprintf(message, sizeof(message), L"A level named %hs already exists.\nDo you want to replace it?", params.buffer);
+                        swprintf(caption, sizeof(caption), L"Overwrite %hs?", params.buffer);
+
+                        int result = MessageBoxW(
+                            NULL,
+                            message,
+                            caption,
+                            MB_ICONEXCLAMATION | MB_YESNO
+                        );
+
+                        if (result == IDYES)
+                        {
+                            CreateLevel(params.buffer, 32, 16, 16, 4096, 4096);
+                        }
+                    }
+                    else
+                    {
+                        CreateLevel(params.buffer, 32, 16, 16, 4096, 4096);
+                    }
+                    
                     break;
                 }
                 case LOAD_LEVEL_BUTTON_ID:

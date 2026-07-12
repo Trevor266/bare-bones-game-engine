@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include "bitmap.h"
 
-#define LEVEL_PATH "assets/resources/levels/"
-
 char*               ReadTextFile(const char *path);
 Bitmap*             ReadBitmapFromFile(const char *path);
 static  FILE*       GetFileHandle(const char *fileHandle);
