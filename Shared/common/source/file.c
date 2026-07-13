@@ -212,7 +212,7 @@ int CreateNewLevelFolder(const char *directoryRootPath)
 
 // Passes back a char* containing the absolute path minus the executable file
 // outSize should be the sizeof(outPath)
-// Relative path is the path you'd like to append to the exe directory, if any.
+// Relative path is the path you'd like to append to the exe directory, if any. This can be a relative path.
 void GetExecutableWorkingDirectory(char *outPath, size_t outSize, const char *relativePath)
 {
     // We need to get the absolute path to the exe. To do this, we get the exe file path (root of main exectuable + file name), 

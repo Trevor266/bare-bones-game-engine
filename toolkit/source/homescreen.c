@@ -1,22 +1,4 @@
-#include "../../Shared/common/include/primitive_types.h"
-#include "../../Shared/common/include/primitive_geometry.h"
-#include "../../Shared/common/include/dimensions.h"
-#include "../../Shared/common/include/buffer.h"
-#include "../../Shared/common/include/font.h"
-#include "../../Shared/common/include/mouse.h"
-#include "../../Shared/common/include/level.h"
-#include "../../Shared/common/include/window.h"
-#include "../include/button.h"
 #include "../include/homescreen.h"
-#include <windows.h>
-#include <wchar.h>
-#include "../include/resource.h"
-#include "../../Shared/common/include/file.h"
-
-typedef struct {
-    char *buffer;
-    size_t bufferSize;
-} NewLevelNameParams;
 
 Button homescreenButtons[HOMESCREEN_BUTTON_COUNT] = 
 {
@@ -119,53 +101,53 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
         {
             switch(buttonId)
             {
+                // Create a new level
                 case NEW_LEVEL_BUTTON_ID:
                 {
-                    char levelName[LEVEL_NAME_MAX] = {0};
-                    NewLevelNameParams params = { .buffer = levelName, .bufferSize = sizeof(levelName) };
+                    // Standup a new level params struct for storing inputs from the new level dialog.
+                    NewLevelParams newLevelParameters = { 0 };
 
-                    INT_PTR result = DialogBoxParamA(
-                        GetModuleHandle(NULL),
-                        MAKEINTRESOURCE(IDD_NEW_LEVEL_NAME),
-                        PlatformWindowInstance.window,
-                        NewLevelNameDialogProc,
-                        (LPARAM)&params
-                    );
-
-                    if (LevelExists(params.buffer) && params.buffer[0] != '\0')
+                    if(BuildNewLevelDialogPromptAndPrompt(&newLevelParameters) == false)
                     {
-                        wchar_t message[512];
-                        wchar_t caption[512];
-                        swprintf(message, sizeof(message), L"A level named %hs already exists.\nDo you want to replace it?", params.buffer);
-                        swprintf(caption, sizeof(caption), L"Overwrite %hs?", params.buffer);
+                        return;
+                    }
 
-                        int result = MessageBoxW(
-                            NULL,
-                            message,
-                            caption,
-                            MB_ICONEXCLAMATION | MB_YESNO
-                        );
-
-                        if (result == IDYES)
-                        {
-                            CreateLevel(params.buffer, 32, 16, 16, 4096, 4096);
-                        }
+                    // If a level with that name already exists, we should ask if it should be overwritten - this will wipe
+                    // the current level folder if they do so and generate a blank .bbl file.
+                    if (newLevelParameters.buffer[0] == '\0')
+                    {
+                        // TODO: Add actual validation to more than just the file name - right now the file name is being validated as it causes 
+                        // actual directory creation and file generation, the other params are inside the file, which isn't even being used
+                        // yet.
+                        MessageBoxA(NULL, "Please enter a valid level name", "No Name", MB_OK);
+                    }
+                    else if (LevelExists(newLevelParameters.buffer))
+                    {
+                        HandleLevelNamingConflict(&newLevelParameters);
                     }
                     else
                     {
-                        CreateLevel(params.buffer, 32, 16, 16, 4096, 4096);
+                        CreateLevel
+                        (
+                            newLevelParameters.buffer,
+                            newLevelParameters.layerCount,
+                            newLevelParameters.tileWidth,
+                            newLevelParameters.tileHeight,
+                            newLevelParameters.levelWidth,
+                            newLevelParameters.levelHeight
+                        );
                     }
                     
                     break;
                 }
                 case LOAD_LEVEL_BUTTON_ID:
                 {
-                    MessageBoxW(NULL, L"load level!", L"test", MB_OK);
+                    MessageBoxA(NULL, "load level!", "test", MB_OK);
                     break;
                 }
                 case SETTINGS_BUTTON_ID:
                 {
-                    MessageBoxW(NULL, L"settings!", L"test", MB_OK);
+                    MessageBoxA(NULL, "settings!", "test", MB_OK);
                     break;
                 }
             }
@@ -173,40 +155,127 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
     }
 }
 
-INT_PTR CALLBACK NewLevelNameDialogProc(HWND dialogHandle, UINT message, WPARAM wParam, LPARAM lParam)
+// Returns true when the level data was filled out successfully, false for cancellation or failure.
+bool BuildNewLevelDialogPromptAndPrompt(NewLevelParams *params)
 {
+    // Create new level form from resource.rc resource.
+    INT_PTR levelCreationResult = DialogBoxParamA
+    (
+        GetModuleHandle(NULL),
+        MAKEINTRESOURCE(IDD_NEW_LEVEL_NAME),
+        PlatformWindowInstance.window,
+        NewLevelNameDialogProc,
+        (LPARAM)params
+    );
+
+    if (levelCreationResult != IDOK)
+    {
+        // TODO: Abstract this very simple ok dialog into a platform agnostic one that takes two args for strings.
+        MessageBoxW
+        (
+            NULL,
+            L"Level Creation Cancelled",
+            L"Cancelled",
+            MB_ICONEXCLAMATION | MB_OK
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+INT_PTR CALLBACK NewLevelNameDialogProc(HWND hwndDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    static NewLevelParams* params;
+
     switch (message)
     {
         case WM_INITDIALOG:
-        {
-            SetWindowLongPtrA(dialogHandle, GWLP_USERDATA, (LONG_PTR)lParam);
-            SetFocus(GetDlgItem(dialogHandle, IDC_LEVEL_NAME_EDIT));
-            return (INT_PTR)FALSE;
-        }
+            params = (NewLevelParams*)lParam;
+            SetWindowLongPtr(hwndDlg, DWLP_USER, (LONG_PTR)params);
+
+            SetDlgItemInt(hwndDlg, IDC_LAYER_COUNT_EDIT, 32, FALSE);
+            SetDlgItemInt(hwndDlg, IDC_TILE_WIDTH_EDIT, 16, FALSE);
+            SetDlgItemInt(hwndDlg, IDC_TILE_HEIGHT_EDIT, 16, FALSE);
+            SetDlgItemInt(hwndDlg, IDC_LEVEL_WIDTH_EDIT, 4096, FALSE);
+            SetDlgItemInt(hwndDlg, IDC_LEVEL_HEIGHT_EDIT, 4096, FALSE);
+
+            return TRUE;
+
         case WM_COMMAND:
-        {
             switch (LOWORD(wParam))
             {
                 case IDOK:
                 {
-                    NewLevelNameParams *params =(NewLevelNameParams *)GetWindowLongPtrA(dialogHandle, GWLP_USERDATA);
+                    params = (NewLevelParams*)GetWindowLongPtr(hwndDlg, DWLP_USER);
 
-                    if (params != NULL)
-                    {
-                        GetDlgItemTextA(dialogHandle, IDC_LEVEL_NAME_EDIT, params->buffer, (int)params->bufferSize);
-                    }
+                    GetDlgItemTextA(hwndDlg, IDC_LEVEL_NAME_EDIT, params->buffer, sizeof(params->buffer));
 
-                    EndDialog(dialogHandle, (INT_PTR)IDOK);
-                    return (INT_PTR)TRUE;
+                    BOOL ok;
+                    params->layerCount  = (int)GetDlgItemInt(hwndDlg, IDC_LAYER_COUNT_EDIT, &ok, TRUE);
+                    params->tileWidth   = (int)GetDlgItemInt(hwndDlg, IDC_TILE_WIDTH_EDIT, &ok, TRUE);
+                    params->tileHeight  = (int)GetDlgItemInt(hwndDlg, IDC_TILE_HEIGHT_EDIT, &ok, TRUE);
+                    params->levelWidth  = (int)GetDlgItemInt(hwndDlg, IDC_LEVEL_WIDTH_EDIT, &ok, TRUE);
+                    params->levelHeight = (int)GetDlgItemInt(hwndDlg, IDC_LEVEL_HEIGHT_EDIT, &ok, TRUE);
+
+                    EndDialog(hwndDlg, IDOK);
+                    return TRUE;
                 }
                 case IDCANCEL:
                 {
-                    EndDialog(dialogHandle, (INT_PTR)IDCANCEL);
-                    return (INT_PTR)TRUE;
+                    EndDialog(hwndDlg, IDCANCEL);
+                    return TRUE;
                 }
             }
+            
             break;
-        }
     }
-    return (INT_PTR)FALSE;
+
+    return FALSE;
+}
+
+void HandleLevelNamingConflict(NewLevelParams *params)
+{
+    #define nameConflictBufferSize 512
+
+    char message[nameConflictBufferSize];
+    char caption[nameConflictBufferSize];
+    snprintf(message, nameConflictBufferSize, "A level named %s already exists.\nDo you want to replace it? This cannot be undone.", params->buffer);
+    snprintf(caption, nameConflictBufferSize, "Overwrite %s?", params->buffer);
+
+    #undef nameConflictBufferSize
+    
+    int overwriteLevelResult = MessageBoxA
+    (
+        NULL,
+        message,
+        caption,
+        MB_ICONEXCLAMATION | MB_YESNO
+    );
+
+    if (overwriteLevelResult == IDYES)
+    {
+        CreateLevel
+        (
+            params->buffer,
+            params->layerCount,
+            params->tileWidth,
+            params->tileHeight,
+            params->levelWidth,
+            params->levelHeight
+        );
+    }
+    else
+    {
+        MessageBoxA
+        (
+            NULL,
+            "Level Creation Cancelled",
+            "Cancelled",
+            MB_ICONEXCLAMATION | MB_OK
+        );
+    }
+
+    return;
 }

@@ -7,10 +7,12 @@
 
 #define LEVEL_FILE_SIGNATURE            0x454C564C // ELVL
 #define MAX_SPRITESHEET_FILE_NAME       256        // Seems good enough
-#define LEVEL_BASE_PATH                 "assets/resources/levels/"
-#define LEVEL_NAME_MAX                  256                                         
-#define LEVEL_FOLDER_PATH_MAX           (MAX_PATH)
-#define LEVEL_FILE_PATH_MAX             (LEVEL_FOLDER_PATH_MAX + LEVEL_NAME_MAX + 8) // +8 for "/" + ".bbl" + null, etc.
+#define LEVEL_BASE_PATH                 "../assets/resources/levels/"
+
+// TODO: These may get #if'd for platform specific path sizes later - Shared ugly windows const for now.
+#define LEVEL_NAME_MAX                  MAX_PATH                                     
+#define LEVEL_FOLDER_PATH_MAX           MAX_PATH
+#define LEVEL_FILE_PATH_MAX             MAX_PATH
 
 /*
     level.h
@@ -54,6 +56,9 @@ typedef struct Level {
     GameTile                    *tiles;          // tileCount entries
 } Level;
 
+Level *ReadLevel(const char *filePath);
+void PrintLevelProperties(const Level *level);
+void FreeLevel(Level *level);
 bool LevelExists(char *levelName);
 Level *LoadLevel(const char *path);
 Level *CreateLevel(const char *name, uint8_t layerCount, uint16_t tileWidth, uint16_t tileHeight, uint16_t levelWidth, uint16_t levelHeight);

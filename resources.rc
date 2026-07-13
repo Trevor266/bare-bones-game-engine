@@ -2,13 +2,29 @@
 
 101   RCDATA    "assets\resources\fonts\Cascadia.ttf"
 
-IDD_NEW_LEVEL_NAME DIALOGEX 0, 0, 200, 70
+IDD_NEW_LEVEL_NAME DIALOGEX 0, 0, 200, 190
 STYLE 0x80C800C0   // WS_POPUP | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME | DS_SETFONT
 CAPTION "New Level"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    LTEXT           "Level name:", -1, 7, 7, 180, 8              // -1 = IDC_STATIC convention
+    LTEXT           "Level name:", -1, 7, 7, 180, 8
     EDITTEXT        IDC_LEVEL_NAME_EDIT, 7, 20, 186, 14, 0x0080  // ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK", 1, 71, 47, 50, 14                      // 1 = IDOK
-    PUSHBUTTON      "Cancel", 2, 125, 47, 50, 14                 // 2 = IDCANCEL
+
+    LTEXT           "Layer count:", -1, 7, 40, 100, 8
+    EDITTEXT        IDC_LAYER_COUNT_EDIT, 110, 37, 83, 14, 0x0080
+
+    LTEXT           "Tile width:", -1, 7, 58, 100, 8
+    EDITTEXT        IDC_TILE_WIDTH_EDIT, 110, 55, 83, 14, 0x0080
+
+    LTEXT           "Tile height:", -1, 7, 76, 100, 8
+    EDITTEXT        IDC_TILE_HEIGHT_EDIT, 110, 73, 83, 14, 0x0080
+
+    LTEXT           "Level width (px):", -1, 7, 94, 100, 8
+    EDITTEXT        IDC_LEVEL_WIDTH_EDIT, 110, 91, 83, 14, 0x0080
+
+    LTEXT           "Level height (px):", -1, 7, 112, 100, 8
+    EDITTEXT        IDC_LEVEL_HEIGHT_EDIT, 110, 109, 83, 14, 0x0080
+
+    DEFPUSHBUTTON   "OK", 1, 71, 145, 50, 14
+    PUSHBUTTON      "Cancel", 2, 125, 145, 50, 14
 END
