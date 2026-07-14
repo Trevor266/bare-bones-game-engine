@@ -1,9 +1,14 @@
 #ifndef LEVEL_H
 #define LEVEL_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdbool.h>
+#include <windows.h>
 #include "bitmap.h"
 #include "tile.h"
-#include <stdbool.h>
-#include <stdint.h>
+#include "file.h"
 
 #define LEVEL_FILE_SIGNATURE            0x454C564C // ELVL
 #define MAX_SPRITESHEET_FILE_NAME       256        // Seems good enough

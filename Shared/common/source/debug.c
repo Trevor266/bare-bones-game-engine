@@ -1,8 +1,4 @@
-#ifndef _DEBUG_H
-#define _DEBUG_H
-#include "../include/mouse.h"
-
-#include <stdio.h>
+#include "../include/debug.h"
 
 void PrintMouseButtonState(MouseButton button)
 {
@@ -29,5 +25,3 @@ void PrintMouseButtonState(MouseButton button)
            MouseButtonEventState.buttonState[button].xCoordinate, 
            MouseButtonEventState.buttonState[button].yCoordinate);
 }
-
-#endif

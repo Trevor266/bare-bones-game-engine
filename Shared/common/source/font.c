@@ -3,9 +3,6 @@
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../include/font.h"
-#include <stdio.h>
-#include <stdlib.h>
-
 const uint8_t codePointOffset = 32;
 const uint8_t codePointBoundaryIndex = 128;
 

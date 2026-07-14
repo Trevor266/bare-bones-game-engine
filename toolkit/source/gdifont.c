@@ -1,5 +1,4 @@
-#include <windows.h>
-#include <WinUser.h>
+#include "../include/gdifont.h"
 
 /*
     Measures a given string of text in raw pixels. Assumes pixels being provided back from Win32.

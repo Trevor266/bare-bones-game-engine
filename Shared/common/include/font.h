@@ -2,6 +2,8 @@
 #ifndef _FONT_H
 #define _FONT_H
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "stb_truetype.h"
 #include "buffer.h"
 

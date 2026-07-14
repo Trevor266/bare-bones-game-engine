@@ -1,5 +1,9 @@
 #ifndef _HOMESCREEN_H
 #define _HOMESCREEN_H
+#include <windows.h>
+#include <wchar.h>
+#include "../include/button.h"
+#include "../include/resource.h"
 #include "../../Shared/common/include/primitive_types.h"
 #include "../../Shared/common/include/primitive_geometry.h"
 #include "../../Shared/common/include/dimensions.h"
@@ -9,10 +13,6 @@
 #include "../../Shared/common/include/level.h"
 #include "../../Shared/common/include/window.h"
 #include "../../Shared/common/include/file.h"
-#include "../include/button.h"
-#include "../include/resource.h"
-#include <windows.h>
-#include <wchar.h>
 
 #define HOMESCREEN_BUTTON_COUNT 3
 #define NEW_LEVEL_BUTTON_ID     0

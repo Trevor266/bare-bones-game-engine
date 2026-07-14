@@ -1,7 +1,11 @@
 #ifndef _FILEH
 #define _FILEH
 #include <stdio.h>
+#include <stdlib.h> 
+#include <stdbool.h>
+#include <windows.h>
 #include "bitmap.h"
+#include "level.h"
 
 char*               ReadTextFile(const char *path);
 Bitmap*             ReadBitmapFromFile(const char *path);

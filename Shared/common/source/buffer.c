@@ -1,5 +1,4 @@
 #include "../include/buffer.h"
-#include "../include/primitive_types.h"
 
 void ClearBufferColor(OffscreenBuffer *Buffer, uint32 Color)
 {

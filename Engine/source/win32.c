@@ -1,19 +1,4 @@
-#include "../../Shared/common/include/mouse.h"
-#include "../../Shared/common/include/debug.h"
-
-#include "../include/keyboard.h"
 #include "../include/win32.h"
-#include "../include/controller.h"
-#include "../../Shared/common/include/window.h"
-#include "../../Shared/common/include/bitmap.h"
-#include "../../Shared/common/include/file.h"
-#include "../include/engine-configuration.h"
-
-#include <stdbool.h>
-#include <stdio.h>
-#include <windows.h>
-#include <Xinput.h>
-#include <time.h>
 
 static uint32_t Backbuffer[LOGICAL_WIDTH * LOGICAL_HEIGHT];
 static bool BackbufferReady = false;

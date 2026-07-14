@@ -3,21 +3,22 @@
 #include <WinUser.h>
 #include <stdio.h>
 #include <math.h>
-#include "../Shared/common/include/dimensions.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "include/homescreen.h"
 #include "include/resource.h"
 #include "include/colors.h"
+#include "include/button.h"
+#include "../Shared/common/include/dimensions.h"
 #include "../Shared/common/include/buffer.h"
 #include "../Shared/common/include/primitive_types.h"
-#include "include/button.h"
 #include "../Shared/common/include/font.h"
 #include "../Shared/common/include/mouse.h"
 #include "../Shared/common/include/debug.h"
 #include "../Shared/common/include/level.h"
 #include "../Shared/common/include/file.h"
 #include "../Shared/common/include/window.h"
-#include <stdint.h>
-#include <stdbool.h>
+
 
 #define TILE_SIZE       16
 #define LEVEL_COLS      16

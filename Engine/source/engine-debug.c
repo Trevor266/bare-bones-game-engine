@@ -1,6 +1,4 @@
-#include "../include/keyboard.h"
-#include "../include/controller.h"
-#include <stdio.h>
+#include "../include/engine-debug.h"
 
 void PrintControllerState(void)
 {

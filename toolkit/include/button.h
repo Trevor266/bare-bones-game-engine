@@ -1,10 +1,12 @@
 #ifndef _BUTTON_H
 #define _BUTTON_H
+#include <stdbool.h>
 #include "../../Shared/common/include/buffer.h"
 #include "../../Shared/common/include/primitive_types.h"
+#include "../../Shared/common/include/primitive_geometry.h"
 #include "../../Shared/common/include/dimensions.h"
+#include "../../Shared/common/include/mouse.h"
 #include "../../Shared/common/include/font.h"
-#include <stdbool.h>
 
 typedef struct Button {
     char *text;

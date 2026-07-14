@@ -2,6 +2,7 @@
 #define MOUSE_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // Define generic mouse button enum, this will be used at the game level for keying into mouse button state.
 typedef enum MouseButton 

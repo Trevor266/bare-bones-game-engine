@@ -1,10 +1,21 @@
 #ifndef WIN32_H
 #define WIN32_H
 
-#include <windows.h>
+
 #include <stdbool.h>
-#include "keyboard.h"
+#include <stdio.h>
+#include <windows.h>
+#include <Xinput.h>
+#include <time.h>
+
+#include "../../Shared/common/include/mouse.h"
+#include "../../Shared/common/include/debug.h"
 #include "../../Shared/common/include/window.h"
+#include "../../Shared/common/include/bitmap.h"
+#include "../../Shared/common/include/file.h"
+#include "keyboard.h"
+#include "controller.h"
+#include "engine-configuration.h"
 
 extern KeyCode     Win32_VirtualKey_KeyCode_Lookup[256];
 

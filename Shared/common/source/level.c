@@ -1,10 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <windows.h>
+
 #include "../include/level.h"
-#include "../include/file.h"
 
 Level *ReadLevel(const char *filePath)
 {

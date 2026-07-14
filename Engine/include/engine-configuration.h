@@ -1,3 +1,6 @@
+#ifndef _ENGINE_CONFIGURATION_H
+#define _ENGINE_CONFIGURATION_H
+#include  <stdint.h>
 /*
     The engine needs to have a certain amount of starting data to know how to handle very basic startup and runtime operations.
     This is done by reading a configuration file from disk at startup, and saving to it periodically as settings potentially change 
@@ -29,3 +32,5 @@ typedef struct EngineConfigFile {
     uint32_t    maxLevelVerticalTiles;
 } EngineConfigFile;
 #pragma pack(pop)
+
+#endif

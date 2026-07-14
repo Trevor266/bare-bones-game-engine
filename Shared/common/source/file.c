@@ -1,10 +1,5 @@
-#include<stdio.h>
-#include <stdlib.h> 
-#include <stdbool.h>
-#include <windows.h>
 #include "../include/file.h"
-#include "../include/bitmap.h"
-#include "../include/level.h"
+
 
 /*
     // A note on C standard library I/O

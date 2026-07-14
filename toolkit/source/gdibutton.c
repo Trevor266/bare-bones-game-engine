@@ -1,4 +1,3 @@
-#include "windows.h"
 #include "../include/gdifont.h"
 
 void CreateDyanmicGdiButton(HWND *buttonHandle, char *buttonText, HWND *parentWindowHandle, LPARAM lp, int x, int y, int leftRightPadding, int topBottomPadding, HFONT buttonFont)
