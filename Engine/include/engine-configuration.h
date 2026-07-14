@@ -9,7 +9,7 @@
 #define GAME_TILE_WIDTH                 16
 #define GAME_TILE_HEIGHT                16
 #define LOGICAL_WIDTH                   640
-#define LOGICAL_HEIGHT                  360
+#define LOGICAL_HEIGHT                  368
 #define MAX_LEVEL_VERTICAL_TILES        256
 #define MAX_LEVEL_HORIZONTAL_TILES      256
 #define SCREEN_TILE_COLS                (LOGICAL_WIDTH / GAME_TILE_WIDTH)

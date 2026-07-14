@@ -23,7 +23,8 @@ if %errorlevel% neq 0 (
 :: Copy out asset folder into build directory.
 robocopy assets build\assets /E /NJH /NJS /NFL /NDL > nul
 
-"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe" /debugexe build\main.exe
+::"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe" /debugexe build\main.exe
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe" /debugexe build\main.exe
 
 exit
 
