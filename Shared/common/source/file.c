@@ -191,14 +191,15 @@ int CreateNewLevelFolder(const char *directoryRootPath)
     char basePath[MAX_PATH];
     GetExecutableWorkingDirectory(basePath, sizeof(basePath), LEVEL_BASE_PATH);
 
-    if (!CreateDirectoryA(directoryRootPath, NULL))
+    // Ensure the shared base folder exists first - on a fresh checkout/build this may not exist yet.
+    if (!CreateDirectoryA(basePath, NULL) && GetLastError() != ERROR_ALREADY_EXISTS)
     {
-        DWORD error = GetLastError();
+        return FALSE;
+    }
 
-        if (error != ERROR_ALREADY_EXISTS)
-        {
-            return FALSE;
-        }
+    if (!CreateDirectoryA(directoryRootPath, NULL) && GetLastError() != ERROR_ALREADY_EXISTS)
+    {
+        return FALSE;
     }
 
     // We allow overwriting an existing level folder from dialog prompt, so only fail if that was not the error we got.

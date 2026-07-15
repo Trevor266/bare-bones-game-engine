@@ -21,6 +21,21 @@
 
 extern Button homescreenButtons[HOMESCREEN_BUTTON_COUNT];
 
+typedef enum HomescreenAction 
+{
+    CREATED_LEVEL = 0,
+    LOADED_LEVEL = 1,
+    SETTINGS = 2
+} HomescreenAction;
+
+// Provides an output to main that can be used to determine what was done and how to proceed, this keeps implementation of 
+// other parts of the toolkit separated while allowing them to react to one another in a coordinated way.
+typedef struct HomescreenResult 
+{
+    HomescreenAction    action;
+    Level*              level;
+} HomescreenResult;
+
 typedef struct NewLevelParams
 {
     char buffer[LEVEL_NAME_MAX];
@@ -31,10 +46,14 @@ typedef struct NewLevelParams
     int  levelHeight;
 } NewLevelParams;
 
-void DrawHomeScreen(OffscreenBuffer WindowBackBuffer, Font font);
-void CheckHomescreenClickEvents(int hitX, int hitY);
-bool BuildNewLevelDialogPromptAndPrompt(NewLevelParams *params);
-INT_PTR CALLBACK NewLevelNameDialogProc(HWND dialogHandle, UINT message, WPARAM wParam, LPARAM lParam);
-void HandleLevelNamingConflict(NewLevelParams *params);
+typedef void (*CloseHomescreenCallback)(HomescreenResult result);
+
+void                InitializeHomescreen(CloseHomescreenCallback onClose);
+void                DrawHomeScreen(OffscreenBuffer WindowBackBuffer, Font font);
+void                CheckHomescreenClickEvents(int hitX, int hitY);
+bool                BuildNewLevelDialogPromptAndPrompt(NewLevelParams *params);
+INT_PTR CALLBACK    NewLevelNameDialogProc(HWND dialogHandle, UINT message, WPARAM wParam, LPARAM lParam);
+Level*              HandleLevelNamingConflict(NewLevelParams *params);
+void                Close(HomescreenAction action, Level* level);
 
 #endif

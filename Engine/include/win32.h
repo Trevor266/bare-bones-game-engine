@@ -31,7 +31,7 @@ void                PrintControllerState(void);
 void                ProcessCharacter(WPARAM wParam, LPARAM lParam);
 void                ProcessKeyDown(WPARAM wParam, LPARAM lParam);
 void                ProcessKeyUp(WPARAM wParam);
-static              HICON CreateHICONFromPixelBuffer(PixelBuffer *pixelBuffer, BOOL isIcon, int hotspotX, int hotspotY);
+static HICON        CreateHICONFromPixelBuffer(PixelBuffer *pixelBuffer, BOOL isIcon, int hotspotX, int hotspotY);
 HCURSOR             CreateCursorFromPixelBuffer(PixelBuffer *pixelBuffer, int hotspotX, int hotspotY);
 HICON               CreateIconFromPixelBuffer(PixelBuffer *pixelBuffer);
 void                GenerateRandomLevel(void);

@@ -1,5 +1,7 @@
 #include "../include/homescreen.h"
 
+static CloseHomescreenCallback onCloseHomescreenCallback = NULL;
+
 Button homescreenButtons[HOMESCREEN_BUTTON_COUNT] = 
 {
     {
@@ -36,6 +38,14 @@ Button homescreenButtons[HOMESCREEN_BUTTON_COUNT] =
         .dimensions      = {0},
     }
 };
+
+void InitializeHomescreen
+(
+    CloseHomescreenCallback onClose
+)
+{
+    onCloseHomescreenCallback = onClose;
+}
 
 void DrawHomeScreen(OffscreenBuffer WindowBackBuffer, Font font)
 {
@@ -112,6 +122,7 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
                         return;
                     }
 
+                    Level* newLevel = NULL;
                     // If a level with that name already exists, we should ask if it should be overwritten - this will wipe
                     // the current level folder if they do so and generate a blank .bbl file.
                     if (newLevelParameters.buffer[0] == '\0')
@@ -123,11 +134,11 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
                     }
                     else if (LevelExists(newLevelParameters.buffer))
                     {
-                        HandleLevelNamingConflict(&newLevelParameters);
+                        newLevel = HandleLevelNamingConflict(&newLevelParameters);
                     }
                     else
                     {
-                        CreateLevel
+                        newLevel = CreateLevel
                         (
                             newLevelParameters.buffer,
                             newLevelParameters.layerCount,
@@ -136,6 +147,12 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
                             newLevelParameters.levelWidth,
                             newLevelParameters.levelHeight
                         );
+                    }
+
+                    // If a new level was created, we should handle loading up a new level editor instance.
+                    if (newLevel != NULL)
+                    {
+                        Close(CREATED_LEVEL, newLevel);
                     }
                     
                     break;
@@ -235,14 +252,14 @@ INT_PTR CALLBACK NewLevelNameDialogProc(HWND hwndDlg, UINT message, WPARAM wPara
     return FALSE;
 }
 
-void HandleLevelNamingConflict(NewLevelParams *params)
+Level* HandleLevelNamingConflict(NewLevelParams *params)
 {
-    #define nameConflictBufferSize 512
+    #define nameConflictDialogBufferSize 512
 
-    char message[nameConflictBufferSize];
-    char caption[nameConflictBufferSize];
-    snprintf(message, nameConflictBufferSize, "A level named %s already exists.\nDo you want to replace it? This cannot be undone.", params->buffer);
-    snprintf(caption, nameConflictBufferSize, "Overwrite %s?", params->buffer);
+    char message[nameConflictDialogBufferSize];
+    char caption[nameConflictDialogBufferSize];
+    snprintf(message, nameConflictDialogBufferSize, "A level named %s already exists.\nDo you want to replace it? This cannot be undone.", params->buffer);
+    snprintf(caption, nameConflictDialogBufferSize, "Overwrite %s?", params->buffer);
 
     #undef nameConflictBufferSize
     
@@ -256,7 +273,7 @@ void HandleLevelNamingConflict(NewLevelParams *params)
 
     if (overwriteLevelResult == IDYES)
     {
-        CreateLevel
+        return CreateLevel
         (
             params->buffer,
             params->layerCount,
@@ -277,5 +294,14 @@ void HandleLevelNamingConflict(NewLevelParams *params)
         );
     }
 
-    return;
+    return NULL;
 }
+
+void Close(HomescreenAction action, Level* level)
+{
+    HomescreenResult result = { .action = action, .level = level };
+    if (onCloseHomescreenCallback != NULL)
+    {
+        onCloseHomescreenCallback(result);
+    }
+} 

@@ -36,6 +36,7 @@ private_global_variable OffscreenBuffer WindowBackBuffer;
 void            InitializeSystem();
 void            UpdateApplicationWindow(HDC devicecontext, Dimensions clientRect, OffscreenBuffer buffer);
 void            ResizeDIBSection(OffscreenBuffer *buffer, int width, int height);
+void            OnHomescreenClose(HomescreenResult result);
 static          BITMAPINFO BitmapInfo;
 static          void *BitmapMemory;
 static          HBITMAP BitmapHandle;
@@ -321,6 +322,7 @@ void InitializeSystem()
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     CascadiaFont = LoadFont("assets/resources/fonts/Cascadia.ttf", 24.0f);
+    InitializeHomescreen(OnHomescreenClose);
 }
 
 void ResizeDIBSection(OffscreenBuffer *buffer, int width, int height)
@@ -364,4 +366,9 @@ void UpdateApplicationWindow(HDC deviceContextHandle, Dimensions clientRect, Off
         DIB_RGB_COLORS,
         SRCCOPY
     );
+}
+
+void OnHomescreenClose(HomescreenResult result)
+{
+    int i = 0; // TODO: Here for debugging - This works - This establishes an architecture for handling results from each screen of the toolkit.
 }
