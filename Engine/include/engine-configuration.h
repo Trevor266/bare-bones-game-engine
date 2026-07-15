@@ -1,3 +1,6 @@
+#ifndef _ENGINE_CONFIGURATION_H
+#define _ENGINE_CONFIGURATION_H
+#include  <stdint.h>
 /*
     The engine needs to have a certain amount of starting data to know how to handle very basic startup and runtime operations.
     This is done by reading a configuration file from disk at startup, and saving to it periodically as settings potentially change 
@@ -9,7 +12,7 @@
 #define GAME_TILE_WIDTH                 16
 #define GAME_TILE_HEIGHT                16
 #define LOGICAL_WIDTH                   640
-#define LOGICAL_HEIGHT                  360
+#define LOGICAL_HEIGHT                  368
 #define MAX_LEVEL_VERTICAL_TILES        256
 #define MAX_LEVEL_HORIZONTAL_TILES      256
 #define SCREEN_TILE_COLS                (LOGICAL_WIDTH / GAME_TILE_WIDTH)
@@ -29,3 +32,5 @@ typedef struct EngineConfigFile {
     uint32_t    maxLevelVerticalTiles;
 } EngineConfigFile;
 #pragma pack(pop)
+
+#endif

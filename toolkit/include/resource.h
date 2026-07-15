@@ -1,6 +1,13 @@
 #ifndef _RESOURCE_H
 #define _RESOURCE_H
 
-#define IDR_CASCADIA_FONT   101
+#define IDR_CASCADIA_FONT       101
+#define IDD_NEW_LEVEL_NAME      501
+#define IDC_LEVEL_NAME_EDIT     502
+#define IDC_LAYER_COUNT_EDIT    503
+#define IDC_TILE_WIDTH_EDIT     504
+#define IDC_TILE_HEIGHT_EDIT    505
+#define IDC_LEVEL_WIDTH_EDIT    506
+#define IDC_LEVEL_HEIGHT_EDIT   507
 
 #endif

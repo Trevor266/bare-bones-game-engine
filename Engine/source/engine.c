@@ -1,8 +1,4 @@
 #include "../include/engine.h"
-#include "../include/file.h"
-#include "../include/engine-configuration.h"
-
-#include <stdlib.h>
 
 Engine GameEngine = {0};
 
@@ -20,7 +16,7 @@ static EngineConfiguration* BuildEngineConfiguration()
 
         Not Found       -       No engine.bin file exists containing the engine configuration, the engine is unusable in this state.
         Initialized     -       An engine.bin file didn't exist, so we created one, the values are all default values the engine hardcodes for initialization.
-        Exists          -       An engine.bin file exists, so at some point we already ran initialization and should treat this config as custom (potentially non-default).
+        Exists          -       An engine.bin file exists, so at some point we already ran initialization and should treat this config as custom (or potentially non-default).
     */
 
     // We need to determine if the engine has a configuration file first.

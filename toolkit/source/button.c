@@ -1,50 +1,57 @@
 // Defines utilities for generating a button in client coordinate space. It is expected 
 // that you provide the proper backbuffer.
-#include "../../Shared/common/include/buffer.h"
-#include "../../Shared/common/include/primitivetypes.h"
+#include "../include/button.h"
 
-void DrawClientSpaceBox(OffscreenBuffer *Buffer, int X, int Y, int Width, int Height, uint32 Color)
+bool ButtonHitTest(Button button, int hitX, int hitY)
 {
-    int Right = X + Width;
-    int Bottom = Y + Height;
+    bool passed = 
+        hitX >= button.dimensions.x && hitX <= button.dimensions.x + button.dimensions.width
+        && hitY >= button.dimensions.y && hitY <= button.dimensions.y + button.dimensions.height;
 
-    // Clip the X, Y, Bottom and Right to the buffer size if any exceed it's bounds.
-    if (X < 0)
+    return passed;
+}
+
+void RenderButton(Button button, void *bufferMemory, int bufferWidth, int bufferHeight, int bufferPitch, Font font)
+{
+    bool renderBorder = button.borderWidth > 0;
+    int buttonX = renderBorder ? button.dimensions.x + button.borderWidth : button.dimensions.x;
+    int buttonY = renderBorder ? button.dimensions.y + button.borderWidth : button.dimensions.y; 
+    int buttonWidth = renderBorder ? button.dimensions.width - (button.borderWidth * 2) : button.dimensions.width;
+    int buttonHeight = renderBorder ? button.dimensions.height - (button.borderWidth * 2) : button.dimensions.height;
+
+    // Conditionally render a quad underneath the actual button for a border effect.
+    if (button.borderWidth > 0)
     {
-        X = 0;
+        RenderQuad(
+            bufferMemory,
+            bufferWidth,
+            bufferHeight,
+            bufferPitch,
+            button.dimensions.x,
+            button.dimensions.y,
+            button.dimensions.width,
+            button.dimensions.height,
+            button.borderRadius,
+            button.borderColor
+        );
     }
 
-    if (Y < 0)
-    {
-        Y = 0;
-    }
+    RenderQuad(
+        bufferMemory,
+        bufferWidth,
+        bufferHeight,
+        bufferPitch,
+        buttonX,
+        buttonY,
+        buttonWidth,
+        buttonHeight,
+        button.borderRadius - button.borderWidth,
+        button.hovered ? button.hoverColor : button.backgroundColor
+    );
 
-    if (Right > Buffer->Width)
-    {
-        Right = Buffer->Width;
-    }
+    int textWidth = MeasureTextWidth(&font, button.text);
+    int textX = button.dimensions.x + (button.dimensions.width / 2) - (textWidth / 2);
+    int textY = button.dimensions.y + (button.dimensions.height / 2) + font.verticalCenterOffset;
 
-    if (Bottom > Buffer->Height)
-    {
-        Bottom = Buffer->Height;
-    }
-
-    // If either of these is true, nothing will render, don't waste compute.
-    if (X >= Right || Y >= Bottom)
-    {
-        return;
-    }
-
-    // Fill out each pixel of the specified box with the provided color.
-    for (int PixelY = Y; PixelY < Bottom; ++PixelY)
-    {
-        uint8 *Row = (uint8 *)Buffer->Memory + PixelY * Buffer->Pitch;
-        uint32 *Pixel = (uint32 *)Row + X;
-
-        for (int PixelX = X; PixelX < Right; ++PixelX)
-        {
-            *Pixel = Color;
-            Pixel++;
-        }
-    }
+    DrawCustomText(bufferMemory, bufferWidth, bufferHeight, bufferPitch, &font, button.text, textX, textY, button.textColor);
 }

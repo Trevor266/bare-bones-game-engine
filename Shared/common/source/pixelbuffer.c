@@ -1,7 +1,5 @@
-#include <stdint.h>
-#include <stdlib.h>
 #include "../include/pixelbuffer.h"
-#include "../include/bitmap.h" 
+
 
 PixelBuffer *AllocatePixelBuffer()
 {

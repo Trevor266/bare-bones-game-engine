@@ -3,7 +3,7 @@
 #define _BUFFER_H
 
 #include <windows.h>
-#include "primitivetypes.h"
+#include "primitive_types.h"
 
 typedef struct OffscreenBuffer
 {

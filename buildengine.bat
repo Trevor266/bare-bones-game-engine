@@ -3,9 +3,9 @@ if not exist build mkdir build
 
 Set CommonPath=Shared/common/source/
 Set SourcePath=Engine/source/
-Set DebugSources=%SourcePath%engine-debug.c
-Set CommonSources=%CommonPath%dimensions.c
-set Sources=%SourcePath%keyboard.c %SourcePath%win32.c %SourcePath%engine.c %SourcePath%mouse.c %SourcePath%controller.c %SourcePath%window.c %SourcePath%file.c %SourcePath%pixelbuffer.c
+Set DebugSources=%SourcePath%engine-debug.c %CommonPath%debug.c
+Set CommonSources=%CommonPath%dimensions.c %CommonPath%mouse.c %CommonPath%primitive_geometry.c %CommonPath%file.c %CommonPath%level.c %CommonPath%window.c  %CommonPath%pixelbuffer.c
+set Sources=%SourcePath%keyboard.c %SourcePath%win32.c %SourcePath%engine.c %SourcePath%controller.c
 set ReleaseBuild=%1
 
 if /i "%ReleaseBuild%"=="release" (
@@ -23,7 +23,8 @@ if %errorlevel% neq 0 (
 :: Copy out asset folder into build directory.
 robocopy assets build\assets /E /NJH /NJS /NFL /NDL > nul
 
-"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe" /debugexe build\main.exe
+::"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe" /debugexe build\main.exe
+"C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe" /debugexe build\main.exe
 
 exit
 

@@ -1,17 +1,4 @@
-#include "../include/keyboard.h"
-#include "../include/mouse.h"
 #include "../include/win32.h"
-#include "../include/controller.h"
-#include "../include/window.h"
-#include "../include/bitmap.h"
-#include "../include/file.h"
-#include "../include/engine-configuration.h"
-
-#include <stdbool.h>
-#include <stdio.h>
-#include <windows.h>
-#include <Xinput.h>
-#include <time.h>
 
 static uint32_t Backbuffer[LOGICAL_WIDTH * LOGICAL_HEIGHT];
 static bool BackbufferReady = false;
@@ -116,7 +103,7 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
         }
 		case WM_LBUTTONDOWN:
 		{
-			SetMouseDownState(MOUSEBUTTON_ONE, lParam);
+			SetMouseDownState(MOUSEBUTTON_ONE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 
 			#if DEBUG
 				PrintMouseButtonState(MOUSEBUTTON_ONE);
@@ -126,7 +113,7 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_LBUTTONUP:
 		{
-			SetMouseUpState(MOUSEBUTTON_ONE, lParam);
+			SetMouseUpState(MOUSEBUTTON_ONE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 
 			#if DEBUG
 				PrintMouseButtonState(MOUSEBUTTON_ONE);
@@ -136,7 +123,7 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_RBUTTONDOWN:
 		{
-			SetMouseDownState(MOUSEBUTTON_TWO, lParam);
+			SetMouseDownState(MOUSEBUTTON_TWO, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 
 			#if DEBUG
 				PrintMouseButtonState(MOUSEBUTTON_TWO);
@@ -146,7 +133,7 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_RBUTTONUP:
 		{
-			SetMouseUpState(MOUSEBUTTON_TWO, lParam);
+			SetMouseUpState(MOUSEBUTTON_TWO, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 
 			#if DEBUG
 				PrintMouseButtonState(MOUSEBUTTON_TWO);
@@ -156,7 +143,7 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_MBUTTONDOWN:
 		{
-			SetMouseDownState(MOUSEBUTTON_THREE, lParam);
+			SetMouseDownState(MOUSEBUTTON_THREE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 
 			#if DEBUG
 				PrintMouseButtonState(MOUSEBUTTON_THREE);
@@ -166,7 +153,7 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		case WM_MBUTTONUP:
 		{
-			SetMouseUpState(MOUSEBUTTON_THREE, lParam);
+			SetMouseUpState(MOUSEBUTTON_THREE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 
 			#if DEBUG
 				PrintMouseButtonState(MOUSEBUTTON_THREE);
@@ -180,19 +167,19 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 			if (xButton == XBUTTON1) 
 			{
-				SetMouseDownState(MOUSEBUTTON_FOUR, lParam);
+				SetMouseDownState(MOUSEBUTTON_FOUR, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 			}
 			else if (xButton == XBUTTON2)
 			{
-				SetMouseDownState(MOUSEBUTTON_FIVE, lParam);
+				SetMouseDownState(MOUSEBUTTON_FIVE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 			}
 
 			#if DEBUG
 				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
 				printf("Mouse %d click triggered, %d, %d\n", 
 					xButton == XBUTTON1 ? 4 : 5,
-					MouseButtonEventState[xMouseButton].xCoordinate, 
-					MouseButtonEventState[xMouseButton].yCoordinate);
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
 			#endif	
 
 			return 0;
@@ -203,19 +190,19 @@ LRESULT CALLBACK Win32_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
 
 			if (xButton == XBUTTON1) 
 			{
-				SetMouseUpState(MOUSEBUTTON_FOUR, lParam);
+				SetMouseUpState(MOUSEBUTTON_FOUR, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 			}
 			else if (xButton == XBUTTON2)
 			{
-				SetMouseUpState(MOUSEBUTTON_FIVE, lParam);
+				SetMouseUpState(MOUSEBUTTON_FIVE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
 			}			
 
 			#if DEBUG
 				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
 				printf("Mouse %d click released, %d, %d\n", 
 					xButton == XBUTTON1 ? 4 : 5,
-					MouseButtonEventState[xMouseButton].xCoordinate, 
-					MouseButtonEventState[xMouseButton].yCoordinate);
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
 			#endif	
 
 			return 0;
@@ -337,9 +324,9 @@ void ClearReleasedMouseButtonsFromMouseButtonState()
 {
 	for (int i = 0; i < MOUSEBUTTON_COUNT; i++)
     {
-        if (MouseButtonEventState[i].buttonState == MOUSEBUTTON_STATE_RELEASED)
+        if (MouseButtonEventState.buttonState[i].buttonState == MOUSEBUTTON_STATE_RELEASED)
         {
-			MouseButtonEventState[i].buttonState = 0;
+			MouseButtonEventState.buttonState[i].buttonState = 0;
 		}
 	}
 }
@@ -396,34 +383,7 @@ void ProcessKeyUp(WPARAM wParam)
 	#endif
 }
 
-void SetMouseDownState(MouseButton button, LPARAM lParam)
-{
-	// TODO: Remove this held logic and state type, windows does not fire multiple down events when the mouse buttons are held, this has 
-	// to be tracked by intuiting it from a pressed state per-frame (or something).
-	bool isHeld = MOUSEBUTTON_IS_DOWN(MouseButtonEventState[button]);
 
-	MouseButtonEventState[button].mouseButton      	= button;
-	MouseButtonEventState[button].buttonState 		= MOUSEBUTTON_STATE_DOWN;
-	MouseButtonEventState[button].xCoordinate      	= (int16_t)(short)LOWORD(lParam); // This avoid having to use windowsx.h, just gets the
-	MouseButtonEventState[button].yCoordinate      	= (int16_t)(short)HIWORD(lParam); // first and last 16 bits of the low 32 bits of lparam (64 bits).
-
-	if (!isHeld)
-	{
-		MouseButtonEventState[button].buttonState |= MOUSEBUTTON_STATE_PRESSED;
-	}
-	else
-	{
-		MouseButtonEventState[button].buttonState |= MOUSEBUTTON_STATE_HELD;
-	}
-}
-
-void SetMouseUpState(MouseButton button, LPARAM lParam)
-{
-	MouseButtonEventState[button].mouseButton      	= button;
-	MouseButtonEventState[button].buttonState 		= MOUSEBUTTON_STATE_RELEASED;
-	MouseButtonEventState[button].xCoordinate      	= (int16_t)(short)LOWORD(lParam); // This avoid having to use windowsx.h, just gets the
-	MouseButtonEventState[button].yCoordinate      	= (int16_t)(short)HIWORD(lParam); // first and last 16 bits of the low 32 bits of lparam (64 bits).
-}
 
 KeyCode Win32_VirtualKey_KeyCode_Lookup[256] = 
 {

@@ -1,19 +1,24 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <windowsx.h>
 #include <WinUser.h>
 #include <stdio.h>
 #include <math.h>
-#include "../Shared/common/include/dimensions.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "include/homescreen.h"
 #include "include/resource.h"
 #include "include/colors.h"
-#include "../Shared/common/include/buffer.h"
-#include "../Shared/common/include/primitivetypes.h"
 #include "include/button.h"
+#include "../Shared/common/include/dimensions.h"
+#include "../Shared/common/include/buffer.h"
+#include "../Shared/common/include/primitive_types.h"
 #include "../Shared/common/include/font.h"
-#include <stdint.h>
-#include <stdbool.h>
+#include "../Shared/common/include/mouse.h"
+#include "../Shared/common/include/debug.h"
+#include "../Shared/common/include/level.h"
+#include "../Shared/common/include/file.h"
+#include "../Shared/common/include/window.h"
+
 
 #define TILE_SIZE       16
 #define LEVEL_COLS      16
@@ -24,15 +29,14 @@
 #define WINDOW_CLASS    "BareBonesLevelEditorWindow"
 #define WINDOW_TITLE    "Bare-Bones Level Editor"
 
-static HWND             windowHandle;
 static HANDLE           hCascadiaFontResource = NULL;
 static HFONT            cascasiaRegularFontHandle = NULL;
 private_global_variable OffscreenBuffer WindowBackBuffer;
 
 void            InitializeSystem();
-void            RegisterWindowClass(HINSTANCE hInst);
 void            UpdateApplicationWindow(HDC devicecontext, Dimensions clientRect, OffscreenBuffer buffer);
 void            ResizeDIBSection(OffscreenBuffer *buffer, int width, int height);
+void            OnHomescreenClose(HomescreenResult result);
 static          BITMAPINFO BitmapInfo;
 static          void *BitmapMemory;
 static          HBITMAP BitmapHandle;
@@ -41,37 +45,43 @@ static          HDC BitmapDeviceContext;
 int BackBufferWidth = 0;
 int BackBufferHeight = 0;
 
+typedef enum ApplicationScreens {
+    HOME = 0,
+    EDITOR = 1
+} ApplicationScreens;
+
 private_global_variable bool ApplicationRunning;
+private_global_variable int CurrentApplicationScreen = HOME;
 
 static Font CascadiaFont;
 
-LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
         case WM_CREATE:
         {
-            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+            PlatformWindowInstance.window = windowHandle;
+            Dimensions Dimension = GetWin32WindowDimensions();
             HDC dc = GetDC(windowHandle);
-            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            ReleaseDC(windowHandle, dc);
 
-            UpdateApplicationWindow(dc, Dimension, WindowBackBuffer); 
+            ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
+            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            UpdateApplicationWindow(dc, Dimension, WindowBackBuffer);
+            ReleaseDC(windowHandle, dc);
             return 0;
         }
 
         case WM_SIZE:
         {
             HDC deviceContextHandle = GetDC(windowHandle);
-            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
-            UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
+            Dimensions Dimension = GetWin32WindowDimensions();
 
             ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
-            ReleaseDC(windowHandle, deviceContextHandle);
-
+            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
+            ReleaseDC(windowHandle, deviceContextHandle);
             InvalidateRect(windowHandle, NULL, TRUE);
             return 0;
         }
@@ -87,7 +97,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
             PAINTSTRUCT ps;
             HDC deviceContextHandle = BeginPaint(windowHandle, &ps);
 
-            Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+            Dimensions Dimension = GetWin32WindowDimensions();
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
             EndPaint(windowHandle, &ps);
@@ -95,14 +105,119 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
         }
 
         case WM_MOUSEMOVE:
-        {
+        {            
+            SetActiveMouseCoordinate((int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
             return 0;
         }
 
-        case WM_LBUTTONDOWN:
-        {
-            return 0;
-        }
+		case WM_LBUTTONDOWN:
+		{
+			SetMouseDownState(MOUSEBUTTON_ONE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+            CheckHomescreenClickEvents((int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_ONE);
+			#endif
+
+			return 0;
+		}
+		case WM_LBUTTONUP:
+		{
+			SetMouseUpState(MOUSEBUTTON_ONE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_ONE);
+			#endif
+
+			return 0;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			SetMouseDownState(MOUSEBUTTON_TWO, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_TWO);
+			#endif
+
+			return 0;
+		}
+		case WM_RBUTTONUP:
+		{
+			SetMouseUpState(MOUSEBUTTON_TWO, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_TWO);
+			#endif
+
+			return 0;
+		}
+		case WM_MBUTTONDOWN:
+		{
+			SetMouseDownState(MOUSEBUTTON_THREE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_THREE);
+			#endif
+
+			return 0;
+		}
+		case WM_MBUTTONUP:
+		{
+			SetMouseUpState(MOUSEBUTTON_THREE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+
+			#if DEBUG
+				PrintMouseButtonState(MOUSEBUTTON_THREE);
+			#endif
+
+			return 0;
+		}
+		case WM_XBUTTONDOWN:
+		{
+			int xButton = GET_XBUTTON_WPARAM(wParam); 
+
+			if (xButton == XBUTTON1) 
+			{
+				SetMouseDownState(MOUSEBUTTON_FOUR, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}
+			else if (xButton == XBUTTON2)
+			{
+				SetMouseDownState(MOUSEBUTTON_FIVE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}
+
+			#if DEBUG
+				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
+				printf("Mouse %d click triggered, %d, %d\n", 
+					xButton == XBUTTON1 ? 4 : 5,
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
+			#endif	
+
+			return 0;
+		}
+		case WM_XBUTTONUP:
+		{
+			int xButton = GET_XBUTTON_WPARAM(wParam); 
+
+			if (xButton == XBUTTON1) 
+			{
+				SetMouseUpState(MOUSEBUTTON_FOUR, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}
+			else if (xButton == XBUTTON2)
+			{
+				SetMouseUpState(MOUSEBUTTON_FIVE, (int16_t)(short)LOWORD(lParam), (int16_t)(short)HIWORD(lParam));
+			}			
+
+			#if DEBUG
+				MouseButton xMouseButton = xButton == XBUTTON1 ? MOUSEBUTTON_FOUR : MOUSEBUTTON_FIVE;
+				printf("Mouse %d click released, %d, %d\n", 
+					xButton == XBUTTON1 ? 4 : 5,
+					MouseButtonEventState.buttonState[xMouseButton].xCoordinate, 
+					MouseButtonEventState.buttonState[xMouseButton].yCoordinate);
+			#endif	
+
+			return 0;
+		}
 
         case WM_COMMAND:
         {
@@ -120,7 +235,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wp, LPARAM lp)
         }
     }
 
-    return DefWindowProcA(windowHandle, msg, wp, lp);
+    return DefWindowProcA(windowHandle, msg, wParam, lParam);
 }
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
@@ -138,7 +253,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
 
     if (RegisterClassA(&WindowClass))
     {
-        windowHandle =
+        PlatformWindowInstance.window =
             CreateWindowExA(
                 0,
                 WindowClass.lpszClassName,
@@ -153,9 +268,9 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                 hInst,
                 0);
 
-        if (windowHandle)
+        if (PlatformWindowInstance.window)
         {
-            HDC DeviceContext = GetDC(windowHandle);
+            HDC DeviceContext = GetDC(PlatformWindowInstance.window);
 
             int XOffset = 0;
             int YOffset = 0;
@@ -176,9 +291,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                     DispatchMessageA(&Message);
                 }
 
-                DrawHomeScreen(windowHandle, WindowBackBuffer, CascadiaFont);
+                switch (CurrentApplicationScreen)
+                {
+                    case HOME:
+                        DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+                        break;
+                    case EDITOR:
+                        break;
+                }
+                
 
-                Dimensions Dimension = GetWin32WindowDimensions(windowHandle);
+                Dimensions Dimension = GetWin32WindowDimensions();
                 UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);
             }
         }
@@ -189,36 +312,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
 
 void InitializeSystem()
 {
+    #if DEBUG
+		AllocConsole();
+		freopen("CONOUT$", "w", stdout);
+	#endif
+
     // This tells Windows that we don't want it doing dpi conversions for us, we want to be told real pixel sizes and 
     // work off that. This is limited to Windows 10+.
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     CascadiaFont = LoadFont("assets/resources/fonts/Cascadia.ttf", 24.0f);
-}
-
-void RegisterWindowClass(HINSTANCE windowInstance)
-{
-    WNDCLASSA wc        = {0};
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc      = WndProc;
-    wc.hInstance        = windowInstance;
-    wc.lpszClassName    = WINDOW_CLASS;
-    wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground    = NULL;
-    RegisterClassA(&wc);
-
-    windowHandle = CreateWindowA(
-        WINDOW_CLASS,
-        WINDOW_TITLE,
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        1920,
-        1080,
-        NULL,
-        NULL,
-        windowInstance,
-        NULL);
+    InitializeHomescreen(OnHomescreenClose);
 }
 
 void ResizeDIBSection(OffscreenBuffer *buffer, int width, int height)
@@ -262,4 +366,9 @@ void UpdateApplicationWindow(HDC deviceContextHandle, Dimensions clientRect, Off
         DIB_RGB_COLORS,
         SRCCOPY
     );
+}
+
+void OnHomescreenClose(HomescreenResult result)
+{
+    int i = 0; // TODO: Here for debugging - This works - This establishes an architecture for handling results from each screen of the toolkit.
 }

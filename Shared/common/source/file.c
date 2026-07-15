@@ -1,8 +1,5 @@
-#include<stdio.h>
-#include <stdlib.h> 
-#include <stdbool.h>
 #include "../include/file.h"
-#include "../include/bitmap.h"
+
 
 /*
     // A note on C standard library I/O
@@ -187,4 +184,46 @@ static long GetFileBufferSize(FILE *fileHandle)
     fseek(fileHandle, 0, SEEK_SET);
 
     return fileSize;
+}
+
+int CreateNewLevelFolder(const char *directoryRootPath)
+{
+    char basePath[MAX_PATH];
+    GetExecutableWorkingDirectory(basePath, sizeof(basePath), LEVEL_BASE_PATH);
+
+    // Ensure the shared base folder exists first - on a fresh checkout/build this may not exist yet.
+    if (!CreateDirectoryA(basePath, NULL) && GetLastError() != ERROR_ALREADY_EXISTS)
+    {
+        return FALSE;
+    }
+
+    if (!CreateDirectoryA(directoryRootPath, NULL) && GetLastError() != ERROR_ALREADY_EXISTS)
+    {
+        return FALSE;
+    }
+
+    // We allow overwriting an existing level folder from dialog prompt, so only fail if that was not the error we got.
+    return TRUE;
+}
+
+// Passes back a char* containing the absolute path minus the executable file
+// outSize should be the sizeof(outPath)
+// Relative path is the path you'd like to append to the exe directory, if any. This can be a relative path.
+void GetExecutableWorkingDirectory(char *outPath, size_t outSize, const char *relativePath)
+{
+    // We need to get the absolute path to the exe. To do this, we get the exe file path (root of main exectuable + file name), 
+    // this gives us a memory address to a string that looks something like "path\\toexe\\main.exe", we want everything prior to main.exe,
+    // so before we return this path, we null terminate the character directly after the lastSlash (lastSlash[1]), which is a shorthand way of 
+    // eliminating all elements after a given memory address offset. This updates the original char array to only contain the relative path to the exe, without the exe itself.
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(NULL, exePath, MAX_PATH);
+
+    char *lastSlash = strrchr(exePath, '\\');
+
+    if (lastSlash != NULL) 
+    {
+        lastSlash[1] = '\0';
+    }
+
+    snprintf(outPath, outSize, "%s%s", exePath, relativePath);
 }

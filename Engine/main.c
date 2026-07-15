@@ -5,16 +5,14 @@
 #include <stdlib.h>
 #include "include/engine.h"
 #include "include/keyboard.h"
-#include "include/mouse.h"
-#include "include/controller.h"
-#include "include/file.h"
 #include "include/win32.h"
-#include "include/bitmap.h"
-#include "include/pixelbuffer.h"
+#include "include/controller.h"
+#include "../Shared/common/include/mouse.h"
+#include "../Shared/common/include/file.h"
+#include "../Shared/common/include/bitmap.h"
+#include "../Shared/common/include/pixelbuffer.h"
 
 // Set the width and height the game will work with internally, this size is used regardless of the actual screen size.
-#define LOGICAL_WIDTH  1280
-#define LOGICAL_HEIGHT 720
 
 float tickAccumulator = 0.0f;
 float targetTickSeconds = 1.0f / 60.0f;  // 60 tick

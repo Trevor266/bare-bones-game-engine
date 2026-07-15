@@ -1,5 +1,5 @@
-#ifndef _PRIMITIVETYPES_H
-#define _PRIMITIVETYPES_H
+#ifndef _PRIMITIVE_TYPES_H
+#define _PRIMITIVE_TYPES_H
 #include <stdint.h>
 
 #define internal static 

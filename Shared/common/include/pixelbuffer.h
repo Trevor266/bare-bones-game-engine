@@ -1,7 +1,8 @@
 #ifndef _PIXELBUFFERH
 #define _PIXELBUFFERH
 #include <stdint.h>
-#include "bitmap.h"
+#include <stdlib.h>
+#include "bitmap.h" 
 
 typedef struct PixelBuffer {
     int channelCount;
