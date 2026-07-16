@@ -36,6 +36,7 @@ private_global_variable OffscreenBuffer WindowBackBuffer;
 
 void            InitializeSystem();
 void            UpdateApplicationWindow(HDC devicecontext, Dimensions clientRect, OffscreenBuffer buffer);
+void            DrawCurrentScreen();
 void            ResizeDIBSection(OffscreenBuffer *buffer, int width, int height);
 void            OnHomescreenClose(HomescreenResult result);
 static          BITMAPINFO BitmapInfo;
@@ -68,7 +69,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
             HDC dc = GetDC(windowHandle);
 
             ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            DrawCurrentScreen();
             UpdateApplicationWindow(dc, Dimension, WindowBackBuffer);
             ReleaseDC(windowHandle, dc);
             return 0;
@@ -80,7 +81,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
             Dimensions Dimension = GetWin32WindowDimensions();
 
             ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            DrawCurrentScreen();
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
             ReleaseDC(windowHandle, deviceContextHandle);
@@ -100,6 +101,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
             HDC deviceContextHandle = BeginPaint(windowHandle, &ps);
 
             Dimensions Dimension = GetWin32WindowDimensions();
+            DrawCurrentScreen();
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
             EndPaint(windowHandle, &ps);
@@ -293,16 +295,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                     DispatchMessageA(&Message);
                 }
 
-                switch (CurrentApplicationScreen)
-                {
-                    case HOME:
-                        DrawHomeScreen(WindowBackBuffer, CascadiaFont);
-                        break;
-                    case EDITOR:
-                        DrawEditorWindow(WindowBackBuffer, CascadiaFont);
-                        break;
-                }
-                
+                DrawCurrentScreen();
 
                 Dimensions Dimension = GetWin32WindowDimensions();
                 UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);
@@ -390,5 +383,18 @@ void OnHomescreenClose(HomescreenResult result)
             CurrentApplicationScreen = TOOLKITSETTINGS;
             break;
         }
+    }
+}
+
+void DrawCurrentScreen()
+{
+    switch (CurrentApplicationScreen)
+    {
+        case HOME:
+            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            break;
+        case EDITOR:
+            DrawEditorWindow(WindowBackBuffer, CascadiaFont);
+            break;
     }
 }
