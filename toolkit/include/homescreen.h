@@ -25,7 +25,7 @@ typedef enum HomescreenAction
 {
     CREATED_LEVEL = 0,
     LOADED_LEVEL = 1,
-    SETTINGS = 2
+    LOADED_SETTINGS = 2
 } HomescreenAction;
 
 // Provides an output to main that can be used to determine what was done and how to proceed, this keeps implementation of 

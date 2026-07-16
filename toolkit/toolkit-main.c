@@ -9,6 +9,7 @@
 #include "include/resource.h"
 #include "include/colors.h"
 #include "include/button.h"
+#include "include/leveleditor.h"
 #include "../Shared/common/include/dimensions.h"
 #include "../Shared/common/include/buffer.h"
 #include "../Shared/common/include/primitive_types.h"
@@ -47,7 +48,8 @@ int BackBufferHeight = 0;
 
 typedef enum ApplicationScreens {
     HOME = 0,
-    EDITOR = 1
+    TOOLKITSETTINGS = 1,
+    EDITOR = 2
 } ApplicationScreens;
 
 private_global_variable bool ApplicationRunning;
@@ -297,6 +299,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                         DrawHomeScreen(WindowBackBuffer, CascadiaFont);
                         break;
                     case EDITOR:
+                        DrawEditorWindow(WindowBackBuffer, CascadiaFont);
                         break;
                 }
                 
@@ -370,5 +373,22 @@ void UpdateApplicationWindow(HDC deviceContextHandle, Dimensions clientRect, Off
 
 void OnHomescreenClose(HomescreenResult result)
 {
-    int i = 0; // TODO: Here for debugging - This works - This establishes an architecture for handling results from each screen of the toolkit.
+    switch(result.action)
+    {
+        case CREATED_LEVEL:
+        {
+            CurrentApplicationScreen = EDITOR;
+            break;
+        }
+        case LOADED_LEVEL:
+        {
+            CurrentApplicationScreen = EDITOR;
+            break;
+        }
+        case LOADED_SETTINGS:
+        {
+            CurrentApplicationScreen = TOOLKITSETTINGS;
+            break;
+        }
+    }
 }
