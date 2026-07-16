@@ -21,16 +21,50 @@ void DrawEditorWindow(OffscreenBuffer WindowBackBuffer, Font font)
     int rightPaneWidth = oneFifthWindowWidth;
     int rightPaneX = leftPaneX + leftPaneWidth + paneGap;
 
+    Dimensions editorPaneDimensions = 
+    {
+        .x = leftPaneX,
+        .y = padding,
+        .width = leftPaneWidth,
+        .height = WindowBackBuffer.Height - topBottomPadding
+    };
+
+    Dimensions tilePickerPaneDimensions = 
+    {
+        .x = rightPaneX,
+        .y = padding,
+        .width = rightPaneWidth,
+        .height = WindowBackBuffer.Height - topBottomPadding
+    };
+
+    // Next we need to render two more quads. These quads are a toolbar at the top of the editor window, what these buttons are specifically doesn't matter right now.
+    // we just need to position and draw the quad these buttons would live in.
+    Dimensions editorToolbarDimensions = 
+    {
+        .x = editorPaneDimensions.x + 5,
+        .y = editorPaneDimensions.y + 5,
+        .width = editorPaneDimensions.width - 10,
+        .height = 50,
+    };
+
+    Dimensions editorMapDimensions = 
+    {
+        .x = editorToolbarDimensions.x,
+        .y = editorToolbarDimensions.y + editorToolbarDimensions.height + 5,
+        .width = editorPaneDimensions.width - 10,
+        .height = editorPaneDimensions.height - editorToolbarDimensions.height - 15,
+    };
+
     RenderQuad
     (
         WindowBackBuffer.Memory,
         WindowBackBuffer.Width,
         WindowBackBuffer.Height,
         WindowBackBuffer.Pitch,
-        leftPaneX,
-        padding,
-        leftPaneWidth,
-        (WindowBackBuffer.Height - topBottomPadding), 
+        editorPaneDimensions.x,
+        editorPaneDimensions.y,
+        editorPaneDimensions.width,
+        editorPaneDimensions.height, 
         0,
         0x00FFE5E0
     );
@@ -41,11 +75,39 @@ void DrawEditorWindow(OffscreenBuffer WindowBackBuffer, Font font)
         WindowBackBuffer.Width,
         WindowBackBuffer.Height,
         WindowBackBuffer.Pitch,
-        rightPaneX,
-        padding,
-        rightPaneWidth,
-        (WindowBackBuffer.Height - topBottomPadding), 
+        tilePickerPaneDimensions.x,
+        tilePickerPaneDimensions.y,
+        tilePickerPaneDimensions.width,
+        tilePickerPaneDimensions.height,
         0,
         0x00FFE5E0
+    );
+
+    RenderQuad
+    (
+        WindowBackBuffer.Memory,
+        WindowBackBuffer.Width,
+        WindowBackBuffer.Height,
+        WindowBackBuffer.Pitch,
+        editorToolbarDimensions.x,
+        editorToolbarDimensions.y,
+        editorToolbarDimensions.width,
+        editorToolbarDimensions.height, 
+        0,
+        0x00FF4545
+    );
+
+    RenderQuad
+    (
+        WindowBackBuffer.Memory,
+        WindowBackBuffer.Width,
+        WindowBackBuffer.Height,
+        WindowBackBuffer.Pitch,
+        editorMapDimensions.x,
+        editorMapDimensions.y,
+        editorMapDimensions.width,
+        editorMapDimensions.height, 
+        0,
+        0x0033A2A2
     );
 }
