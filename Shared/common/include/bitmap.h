@@ -1,6 +1,8 @@
 #ifndef _BITMAPH
 #define _BITMAPH
 #include <stdint.h>
+#include "dimensions.h"
+#include "pixelbuffer.h"
 /*
     A note on bitmaps
     Bitmaps are just files that lay out image data in a very specific way. This format is defined as:
@@ -54,5 +56,20 @@ typedef struct Bitmap {
     BitmapChannelFormatType     channels;
     uint8_t                     *pixels;
 } Bitmap;
+
+PixelBuffer*    ConvertBitmapToPixelBuffer(Bitmap *bitmap);
+Bitmap*         ConvertPixelBufferToBitmap(PixelBuffer *pixelBuffer);
+void            RenderBitmap
+(
+    void        *destMemory,
+    int          destBufferWidth,
+    int          destBufferHeight,
+    int          destPitch,
+    PixelBuffer *pixelBuffer,
+    int          destX,
+    int          destY,
+    int          destW,
+    int          destH
+);
 
 #endif
