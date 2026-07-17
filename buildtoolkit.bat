@@ -2,10 +2,10 @@
 if not exist build-toolkit mkdir build-toolkit
 
 Set CommonPath=Shared/common/source/
-Set CommonSources=%CommonPath%dimensions.c %CommonPath%buffer.c %CommonPath%font.c %CommonPath%mouse.c %CommonPath%primitive_geometry.c %CommonPath%level.c %CommonPath%file.c %CommonPath%window.c  %CommonPath%pixelbuffer.c
+Set CommonSources=%CommonPath%dimensions.c %CommonPath%buffer.c %CommonPath%font.c %CommonPath%mouse.c %CommonPath%primitive_geometry.c %CommonPath%level.c %CommonPath%file.c %CommonPath%window.c  %CommonPath%pixelbuffer.c %CommonPath%bitmap.c
 Set DebugSources=%CommonPath%debug.c
 Set SourcePath=Toolkit/source/
-set Sources=Toolkit/toolkit-main.c %SourcePath%gdifont.c %SourcePath%gdibutton.c %SourcePath%button.c %SourcePath%homescreen.c
+set Sources=Toolkit/toolkit-main.c %SourcePath%gdifont.c %SourcePath%gdibutton.c %SourcePath%button.c %SourcePath%homescreen.c %SourcePath%leveleditor.c
 set ReleaseBuild=%1
 
 :: Compile resources (font, icons, etc.)
@@ -31,6 +31,7 @@ if %errorlevel% neq 0 (
 :: Copy out asset folder into build directory.
 robocopy assets build-toolkit\assets /E /NJH /NJS /NFL /NDL > nul
 
+::"C:\Program Files\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe" /debugexe build\main.exe
 "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe" /debugexe build-toolkit\main.exe
 
 exit

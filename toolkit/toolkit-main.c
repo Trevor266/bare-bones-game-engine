@@ -9,6 +9,7 @@
 #include "include/resource.h"
 #include "include/colors.h"
 #include "include/button.h"
+#include "include/leveleditor.h"
 #include "../Shared/common/include/dimensions.h"
 #include "../Shared/common/include/buffer.h"
 #include "../Shared/common/include/primitive_types.h"
@@ -35,6 +36,7 @@ private_global_variable OffscreenBuffer WindowBackBuffer;
 
 void            InitializeSystem();
 void            UpdateApplicationWindow(HDC devicecontext, Dimensions clientRect, OffscreenBuffer buffer);
+void            DrawCurrentScreen();
 void            ResizeDIBSection(OffscreenBuffer *buffer, int width, int height);
 void            OnHomescreenClose(HomescreenResult result);
 static          BITMAPINFO BitmapInfo;
@@ -47,7 +49,8 @@ int BackBufferHeight = 0;
 
 typedef enum ApplicationScreens {
     HOME = 0,
-    EDITOR = 1
+    TOOLKITSETTINGS = 1,
+    EDITOR = 2
 } ApplicationScreens;
 
 private_global_variable bool ApplicationRunning;
@@ -66,7 +69,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
             HDC dc = GetDC(windowHandle);
 
             ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            DrawCurrentScreen();
             UpdateApplicationWindow(dc, Dimension, WindowBackBuffer);
             ReleaseDC(windowHandle, dc);
             return 0;
@@ -78,7 +81,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
             Dimensions Dimension = GetWin32WindowDimensions();
 
             ResizeDIBSection(&WindowBackBuffer, Dimension.width, Dimension.height);
-            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            DrawCurrentScreen();
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
             ReleaseDC(windowHandle, deviceContextHandle);
@@ -98,6 +101,7 @@ LRESULT CALLBACK WndProc(HWND windowHandle, UINT msg, WPARAM wParam, LPARAM lPar
             HDC deviceContextHandle = BeginPaint(windowHandle, &ps);
 
             Dimensions Dimension = GetWin32WindowDimensions();
+            DrawCurrentScreen();
             UpdateApplicationWindow(deviceContextHandle, Dimension, WindowBackBuffer);
 
             EndPaint(windowHandle, &ps);
@@ -291,15 +295,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow)
                     DispatchMessageA(&Message);
                 }
 
-                switch (CurrentApplicationScreen)
-                {
-                    case HOME:
-                        DrawHomeScreen(WindowBackBuffer, CascadiaFont);
-                        break;
-                    case EDITOR:
-                        break;
-                }
-                
+                DrawCurrentScreen();
 
                 Dimensions Dimension = GetWin32WindowDimensions();
                 UpdateApplicationWindow(DeviceContext, Dimension, WindowBackBuffer);
@@ -370,5 +366,35 @@ void UpdateApplicationWindow(HDC deviceContextHandle, Dimensions clientRect, Off
 
 void OnHomescreenClose(HomescreenResult result)
 {
-    int i = 0; // TODO: Here for debugging - This works - This establishes an architecture for handling results from each screen of the toolkit.
+    switch(result.action)
+    {
+        case CREATED_LEVEL:
+        {
+            CurrentApplicationScreen = EDITOR;
+            break;
+        }
+        case LOADED_LEVEL:
+        {
+            CurrentApplicationScreen = EDITOR;
+            break;
+        }
+        case LOADED_SETTINGS:
+        {
+            CurrentApplicationScreen = TOOLKITSETTINGS;
+            break;
+        }
+    }
+}
+
+void DrawCurrentScreen()
+{
+    switch (CurrentApplicationScreen)
+    {
+        case HOME:
+            DrawHomeScreen(WindowBackBuffer, CascadiaFont);
+            break;
+        case EDITOR:
+            DrawEditorWindow(WindowBackBuffer, CascadiaFont);
+            break;
+    }
 }

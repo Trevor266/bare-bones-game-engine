@@ -51,13 +51,12 @@ void DrawHomeScreen(OffscreenBuffer WindowBackBuffer, Font font)
 {
     // FIRST - Move window back buffer into a globally available variable in buffer.c, then all future buffers can just be pulled from here.
     ClearBufferColor(&WindowBackBuffer, 0x00FBD2CB);
-    Dimensions windowDimensions = GetWin32WindowDimensions();
 
     // Use the smaller dimension as the scaling reference, so buttons maintain 
     // their intended aspect ratio independent of the client aspect ratio.
-    int referenceDimension = (windowDimensions.width < windowDimensions.height)
-        ? windowDimensions.width
-        : windowDimensions.height;
+    int referenceDimension = (WindowBackBuffer.Width < WindowBackBuffer.Height)
+        ? WindowBackBuffer.Width
+        : WindowBackBuffer.Height;
 
     int buttonStackLeftRightPadding = 40;
 
@@ -80,9 +79,9 @@ void DrawHomeScreen(OffscreenBuffer WindowBackBuffer, Font font)
         which in this case corresponds to the x position as well
         To get the centered Y position is the same thing but we need to (height of buttons * count of buttons) / 2 for the y position.
     */
-    int buttonStackX = (windowDimensions.width  / 2) - (buttonWidth / 2) - buttonStackLeftRightPadding;
+    int buttonStackX = (WindowBackBuffer.Width  / 2) - (buttonWidth / 2) - buttonStackLeftRightPadding;
     int buttonStackWidth = buttonWidth + (buttonStackLeftRightPadding * 2);
-    int buttonStackY = (windowDimensions.height / 2) - (buttonStackHeight / 2);
+    int buttonStackY = (WindowBackBuffer.Height / 2) - (buttonStackHeight / 2);
     int buttonX = buttonStackX + buttonStackLeftRightPadding;
 
     RenderQuad(WindowBackBuffer.Memory, WindowBackBuffer.Width, WindowBackBuffer.Height, WindowBackBuffer.Pitch, buttonStackX, buttonStackY, buttonStackWidth, buttonStackHeight, 8, 0x00FFE5E0);

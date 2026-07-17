@@ -57,8 +57,11 @@ char *ReadTextFile(const char *path)
 
 Bitmap *ReadBitmapFromFile(const char *path)
 {
+    char resolvedPath[MAX_PATH];
+    GetExecutableWorkingDirectory(resolvedPath, sizeof(resolvedPath), path);
+
     // Get C runtime file handle.
-    FILE *fileHandle = GetFileHandle(path);
+    FILE *fileHandle = GetFileHandle(resolvedPath);
     if (!fileHandle)
     {
         return NULL;

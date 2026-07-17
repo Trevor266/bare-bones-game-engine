@@ -2,7 +2,6 @@
 #define _PIXELBUFFERH
 #include <stdint.h>
 #include <stdlib.h>
-#include "bitmap.h" 
 
 typedef struct PixelBuffer {
     int channelCount;
@@ -13,7 +12,5 @@ typedef struct PixelBuffer {
 
 PixelBuffer*    AllocatePixelBuffer();
 void            FreePixelBuffer(PixelBuffer *pixelBuffer);
-PixelBuffer*    ConvertBitmapToPixelBuffer(Bitmap *bitmap);
-Bitmap*         ConvertPixelBufferToBitmap(PixelBuffer *pixelBuffer);
 
 #endif
