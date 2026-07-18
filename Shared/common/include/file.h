@@ -4,6 +4,7 @@
 #include <stdlib.h> 
 #include <stdbool.h>
 #include <windows.h>
+#include <shlobj.h>
 #include "bitmap.h"
 #include "level.h"
 
@@ -14,4 +15,6 @@ static  long        GetFileBufferSize(FILE *fileHandle);
 int                 WriteBinaryFile(FILE *file, const char *contents);
 int                 CreateNewLevelFolder(const char *directoryRootPath);
 void                GetExecutableWorkingDirectory(char *outPath, size_t outSize, const char *relativePath);
+BOOL                GetCanonicalizedExecutableWorkingDirectory(wchar_t *outPath, size_t outSize, const char *relativePath);
+BOOL                BuildPIDLISTFromPath(wchar_t *directoryPath, PIDLIST_ABSOLUTE *pidlAbsolute);
 #endif

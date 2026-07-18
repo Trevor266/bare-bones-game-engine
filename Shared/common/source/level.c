@@ -38,6 +38,7 @@ Level *ReadLevel(const char *filePath)
         return NULL;
     }
 
+    level->sourcePath = _strdup(filePath);
     level->levelWidth  = header.levelWidth;
     level->levelHeight = header.levelHeight;
     level->tileWidth   = header.tileWidth;

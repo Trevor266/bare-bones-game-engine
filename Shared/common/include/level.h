@@ -49,6 +49,7 @@ typedef struct LevelSpriteSheetMetadata {
 } LevelSpriteSheetMetadata;
 
 typedef struct Level {
+    char*                       sourcePath;
     uint16_t                    levelWidth;
     uint16_t                    levelHeight;
     uint16_t                    tileWidth;
@@ -65,7 +66,6 @@ Level *ReadLevel(const char *filePath);
 void PrintLevelProperties(const Level *level);
 void FreeLevel(Level *level);
 bool LevelExists(char *levelName);
-Level *LoadLevel(const char *path);
 Level *CreateLevel(const char *name, uint8_t layerCount, uint16_t tileWidth, uint16_t tileHeight, uint16_t levelWidth, uint16_t levelHeight);
 
 #endif
