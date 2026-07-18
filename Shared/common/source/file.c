@@ -230,3 +230,39 @@ void GetExecutableWorkingDirectory(char *outPath, size_t outSize, const char *re
 
     snprintf(outPath, outSize, "%s%s", exePath, relativePath);
 }
+
+// TODO: I think this should return back a char* and require the caller to cast.
+BOOL GetCanonicalizedExecutableWorkingDirectory(wchar_t *outPath, size_t outSize, const char *relativePath)
+{
+    char rawPath[MAX_PATH];
+    GetExecutableWorkingDirectory(rawPath, sizeof(rawPath), relativePath);
+
+    wchar_t wRawPath[MAX_PATH];
+    if (MultiByteToWideChar(CP_UTF8, 0, rawPath, -1, wRawPath, MAX_PATH) == 0)
+    {
+        return FALSE;
+    }
+
+    wchar_t wCanonicalPath[MAX_PATH];
+    DWORD canonResult = GetFullPathNameW(wRawPath, MAX_PATH, wCanonicalPath, NULL);
+    if (canonResult == 0 || canonResult > MAX_PATH)
+    {
+        return FALSE;
+    }
+
+    wcsncpy(outPath, wCanonicalPath, outSize / sizeof(wchar_t));
+    outPath[outSize / sizeof(wchar_t) - 1] = L'\0';
+
+    return TRUE;
+}
+
+BOOL BuildPIDLISTFromPath(wchar_t *directoryPath, PIDLIST_ABSOLUTE *pidlAbsolute)
+{
+    HRESULT folderTreeRootFolderResult = SHParseDisplayName(directoryPath, NULL, pidlAbsolute, 0, NULL);
+    if (folderTreeRootFolderResult != S_OK)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}

@@ -2,6 +2,7 @@
 #define _HOMESCREEN_H
 #include <windows.h>
 #include <wchar.h>
+#include <shlobj.h>
 #include "../include/button.h"
 #include "../include/resource.h"
 #include "../../Shared/common/include/primitive_types.h"
@@ -13,6 +14,7 @@
 #include "../../Shared/common/include/level.h"
 #include "../../Shared/common/include/window.h"
 #include "../../Shared/common/include/file.h"
+#include "../../Shared/common/include/utf8.h"
 
 #define HOMESCREEN_BUTTON_COUNT 3
 #define NEW_LEVEL_BUTTON_ID     0
@@ -55,5 +57,7 @@ bool                BuildNewLevelDialogPromptAndPrompt(NewLevelParams *params);
 INT_PTR CALLBACK    NewLevelNameDialogProc(HWND dialogHandle, UINT message, WPARAM wParam, LPARAM lParam);
 Level*              HandleLevelNamingConflict(NewLevelParams *params);
 void                Close(HomescreenAction action, Level* level);
+void                HandleLoadLevelClick();
+void                HandleNewLevelClick();
 
 #endif

@@ -113,52 +113,12 @@ void CheckHomescreenClickEvents(int hitX, int hitY)
                 // Create a new level
                 case NEW_LEVEL_BUTTON_ID:
                 {
-                    // Standup a new level params struct for storing inputs from the new level dialog.
-                    NewLevelParams newLevelParameters = { 0 };
-
-                    if(BuildNewLevelDialogPromptAndPrompt(&newLevelParameters) == false)
-                    {
-                        return;
-                    }
-
-                    Level* newLevel = NULL;
-                    // If a level with that name already exists, we should ask if it should be overwritten - this will wipe
-                    // the current level folder if they do so and generate a blank .bbl file.
-                    if (newLevelParameters.buffer[0] == '\0')
-                    {
-                        // TODO: Add actual validation to more than just the file name - right now the file name is being validated as it causes 
-                        // actual directory creation and file generation, the other params are inside the file, which isn't even being used
-                        // yet.
-                        MessageBoxA(NULL, "Please enter a valid level name", "No Name", MB_OK);
-                    }
-                    else if (LevelExists(newLevelParameters.buffer))
-                    {
-                        newLevel = HandleLevelNamingConflict(&newLevelParameters);
-                    }
-                    else
-                    {
-                        newLevel = CreateLevel
-                        (
-                            newLevelParameters.buffer,
-                            newLevelParameters.layerCount,
-                            newLevelParameters.tileWidth,
-                            newLevelParameters.tileHeight,
-                            newLevelParameters.levelWidth,
-                            newLevelParameters.levelHeight
-                        );
-                    }
-
-                    // If a new level was created, we should handle loading up a new level editor instance.
-                    if (newLevel != NULL)
-                    {
-                        Close(CREATED_LEVEL, newLevel);
-                    }
-                    
+                    HandleNewLevelClick();
                     break;
                 }
                 case LOAD_LEVEL_BUTTON_ID:
                 {
-                    MessageBoxA(NULL, "load level!", "test", MB_OK);
+                    HandleLoadLevelClick();
                     break;
                 }
                 case SETTINGS_BUTTON_ID:
@@ -294,6 +254,146 @@ Level* HandleLevelNamingConflict(NewLevelParams *params)
     }
 
     return NULL;
+}
+
+void HandleNewLevelClick()
+{
+    // Standup a new level params struct for storing inputs from the new level dialog.
+    NewLevelParams newLevelParameters = { 0 };
+
+    if(BuildNewLevelDialogPromptAndPrompt(&newLevelParameters) == false)
+    {
+        return;
+    }
+
+    Level* newLevel = NULL;
+    // If a level with that name already exists, we should ask if it should be overwritten - this will wipe
+    // the current level folder if they do so and generate a blank .bbl file.
+    if (newLevelParameters.buffer[0] == '\0')
+    {
+        // TODO: Add actual validation to more than just the file name - right now the file name is being validated as it causes 
+        // actual directory creation and file generation, the other params are inside the file, which isn't even being used
+        // yet.
+        MessageBoxA(NULL, "Please enter a valid level name", "No Name", MB_OK);
+    }
+    else if (LevelExists(newLevelParameters.buffer))
+    {
+        newLevel = HandleLevelNamingConflict(&newLevelParameters);
+    }
+    else
+    {
+        newLevel = CreateLevel
+        (
+            newLevelParameters.buffer,
+            newLevelParameters.layerCount,
+            newLevelParameters.tileWidth,
+            newLevelParameters.tileHeight,
+            newLevelParameters.levelWidth,
+            newLevelParameters.levelHeight
+        );
+    }
+
+    // If a new level was created, we should handle loading up a new level editor instance.
+    if (newLevel != NULL)
+    {
+        Close(CREATED_LEVEL, newLevel);
+    }
+}
+
+void HandleLoadLevelClick()
+{
+    HRESULT ComInitializationResult = CoInitialize(NULL);
+    
+    // COM needs to be initialized for the shell to build icons/tree properly (as a safety net, even though windows will often handle this seemingly in testing.)
+    // Valid return types: S_OK -> Initialized on this thread when we asked. S_FALSE -> COM is already initialized on this thread, proceed.
+    // Invalid return types: RPC_E_CHANGED_MODE -> Means COM was initialized with a different threading model. In this case, Multi-threaded apartment over single-threaded.
+    if (ComInitializationResult != S_OK && ComInitializationResult != S_FALSE)
+    {
+        MessageBoxA(NULL, "Something went wrong while trying to open the native file picker", "Error", MB_OK);
+        return;
+    }
+
+    wchar_t wSelectedLevelPath[MAX_PATH] = L"";
+
+    // COM is finnicky with paths, so we convert to a properly formatted and slashed path to pass.
+    wchar_t wCanonicalRootLevelDirectory[MAX_PATH];
+    if (!GetCanonicalizedExecutableWorkingDirectory(wCanonicalRootLevelDirectory, sizeof(wCanonicalRootLevelDirectory), LEVEL_BASE_PATH))
+    {
+        MessageBoxA(NULL, "Unable to get the root level folder.", "Error", MB_OK);
+        return;
+    }
+
+    // Convert the path into a PIDL, this is what we have to provide to the BROWSEINFOW struct to specify the root directory
+    PIDLIST_ABSOLUTE pidlRoot = NULL;
+    if (!BuildPIDLISTFromPath(wCanonicalRootLevelDirectory, &pidlRoot))
+    {
+        MessageBoxA(NULL, "Unable to get the root level folder.", "Error", MB_OK);
+        return;
+    }
+
+    BROWSEINFOW browseInfo = { 0 };
+    browseInfo.hwndOwner = NULL;
+    browseInfo.lpszTitle = L"Select Level Folder";
+    browseInfo.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    browseInfo.pidlRoot = pidlRoot;
+
+    // NOTE: This implementation uses SHBrowseForFolderW which Microsoft recommends against using past Vista in favor 
+    // of IFileDialog and pure com. This picker doesn't add anything meaningful for this toolkits purposes, so 
+    // the older version is fine.
+    LPITEMIDLIST pidl = SHBrowseForFolderW(&browseInfo);
+
+    bool readLevelFolderSuccess = false;
+    bool cancelled = false;
+    if (pidl != NULL) 
+    {
+        readLevelFolderSuccess = SHGetPathFromIDListW(pidl, wSelectedLevelPath);
+        CoTaskMemFree((LPVOID)pidl);
+    }
+    else
+    {
+        cancelled = true;
+    }
+
+    if (pidlRoot != NULL)
+    {
+        CoTaskMemFree((LPVOID)pidlRoot);
+    }
+
+    char* selectedLevelPath = WideToUtf8(wSelectedLevelPath);
+    CoUninitialize();
+
+    if (readLevelFolderSuccess)
+    {                        
+        // Extract just the folder name (last path component) to match the "name/name.bbl" convention
+        const char *folderName = strrchr(selectedLevelPath, '\\');
+        folderName = (folderName != NULL) ? folderName + 1 : selectedLevelPath;
+
+        char levelFilePath[MAX_PATH];
+        snprintf(levelFilePath, sizeof(levelFilePath), "%s\\%s.bbl", selectedLevelPath, folderName);
+
+        Level *level = ReadLevel(levelFilePath);
+
+        if (level == NULL)
+        {
+            char message[512];
+            snprintf(message, 512, "Error reading level at provided path: %s", levelFilePath);
+            MessageBoxA(NULL, message, "Error!", MB_OK);
+            free(selectedLevelPath);
+            return;
+        }
+        else
+        {
+            free(selectedLevelPath);
+            Close(LOADED_LEVEL, level);
+        }
+    }
+    else if (!cancelled)
+    {
+        char message[512];
+        snprintf(message, 512, "Error reading folder at provided path: %s", selectedLevelPath);
+        free(selectedLevelPath);
+        MessageBoxA(NULL, message, "Error!", MB_OK);
+    }
 }
 
 void Close(HomescreenAction action, Level* level)
