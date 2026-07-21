@@ -91,20 +91,38 @@ void GetRelativePathFromExecutableDirectory(char *outPath, size_t outSize, const
     snprintf(outPath, outSize, "%s%s", exePath, relativePath);
 }
 
-void GetFilesContainingFolder(char *outPath)
+void GetFilesContainingFolder(char *filePathBuffer, char *containingFolderPathBuffer)
 {
-    char *lastBackslash = strrchr(outPath, '\\');
-    char *lastForwardSlash = strrchr(outPath, '/');
+    /*
+        Paths can use either back or forward slashes, and various systems tolerate various mixed usages of these, 
+        therefore this function assumes it may receive either/or. We need to determine which type of slash 
+        the path ends on. The idea is we are going to take a path like this one:
 
-    char *lastSlash = lastBackslash;
-    if (lastForwardSlash > lastBackslash)
-    {
-        lastSlash = lastForwardSlash;
-    }
+        path/to/file/plus/thefile.name
+
+        We need to find the last slash, and then determine it's size:
+        "path/to/file/plus/" split off"thefile.name".
+
+        Once we do this, we know the size of the buffer we need to allocate, so we can take the index of our last slash to get the file path 
+        to copy into the outPath
+    */
+    char *lastBackslash = strrchr(filePathBuffer, '\\');
+    char *lastForwardSlash = strrchr(filePathBuffer, '/');
+    
+    // Whichever of these has the large value (memory address) can be assumed to further down the string than the other, so we set the slash here.
+    char *lastSlash = lastForwardSlash > lastBackslash ? lastForwardSlash : lastBackslash;
 
     if (lastSlash != NULL)
     {
-        lastSlash[1] = '\0';
+        // Once we find the last slash, use it's memory address to find where it is relative to the file path string, 
+        // and get the size difference between the two, add one because the slash position itself is not accounted for so this will be one off.
+        size_t filePathSizeWithoutFile = (size_t)(lastSlash - filePathBuffer) + 1;
+        memcpy(containingFolderPathBuffer, filePathBuffer, filePathSizeWithoutFile);
+        containingFolderPathBuffer[filePathSizeWithoutFile] = '\0';
+    }
+    else
+    {
+        containingFolderPathBuffer[0] = '\0';
     }
 }
 

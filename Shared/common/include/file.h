@@ -13,7 +13,7 @@
 #endif
 
 void                AppendFilePath(char *dest, size_t destSize, const char *basePath, const char *appendedPath);
-void                GetFilesContainingFolder(char *outPath);
+void                GetFilesContainingFolder(char *filePathBuffer, char *containingFolderPathBuffer);
 char*               ReadTextFile(const char *path);
 static  FILE*       GetFileHandle(const char *fileHandle);
 static  long        GetFileBufferSize(FILE *fileHandle);

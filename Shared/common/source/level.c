@@ -57,11 +57,9 @@ Level *ReadLevel(const char *levelFilePath)
 
         // A level consists of a bitmap per spritesheet, this bitmap is read into memory in full and used to pull tile data.
         // The sheets are stored within a sheets folder present in the root of the level.
-        // To start off, using the level passes to us, chop off the level file to get to the level folder, 
-        // and append /sheets to the end.
+        // To start off, get the parent folder of the level so we know what directory we are working with.
         char sheetBasePath[LEVEL_FILE_PATH_MAX];
-        strncpy_s(sheetBasePath, sizeof(sheetBasePath), levelFilePath, _TRUNCATE);
-        GetFilesContainingFolder(sheetBasePath);
+        GetFilesContainingFolder(levelFilePath, sheetBasePath);
         AppendFilePath(sheetBasePath, sizeof(sheetBasePath), sheetBasePath, "sheets/");
 
         if (fread(level->sheetMetaData, sizeof(LevelSpriteSheetMetadata), level->sheetCount, file) != level->sheetCount)
