@@ -211,32 +211,31 @@ Bitmap *ReadBitmapFromFile(const char *path)
 
 int WriteBitmapToFile(const char *path, const Bitmap *bitmap)
 {
-    if (!bitmap || !bitmap->pixels)
+    // NOTE: Right now this codebase only recognizes 24 and 32 bit bitmaps, as technically you don't really need the others, they can be represented by 
+    // the channels of rgba bitmaps - This is subject to change
+    if (!bitmap
+        || !bitmap->pixels
+        || (bitmap->channels != BITMAP_CHANNEL_FORMAT_RGB && bitmap->channels != BITMAP_CHANNEL_FORMAT_RGBA)
+    )
     {
         return FALSE;
     }
 
-    // Only support the same two formats ReadBitmapFromFile understands.
-    if (bitmap->channels != BITMAP_CHANNEL_FORMAT_RGB && bitmap->channels != BITMAP_CHANNEL_FORMAT_RGBA)
-    {
-        return FALSE;
-    }
-
-    const int width    = bitmap->width;
-    const int height    = bitmap->height;
-    const int channels = (int)bitmap->channels;
-    const int rowSize  = (width * channels + 3) & ~3;
-    const int padding  = rowSize - (width * channels);
+    const int width             = bitmap->width;
+    const int height            = bitmap->height;
+    const int channels          = (int)bitmap->channels;
+    const int rowSize           = (width * channels + 3) & ~3; // Zero out the bottom 2 bits here, because 24 bit bitmaps won't align properly otherwise.
+    const int padding           = rowSize - (width * channels);
     const uint32_t pixelDataSize = (uint32_t)(rowSize * height);
 
-    BitmapFileHeader header = {
+    const BitmapFileHeader header = {
         .signature        = 0x4D42, // 'BM'
         .fileSize         = sizeof(BitmapFileHeader) + pixelDataSize,
         .reserved         = 0,
         .pixelOffset      = sizeof(BitmapFileHeader),
         .dibSize          = sizeof(BitmapFileHeader) - offsetof(BitmapFileHeader, dibSize),
         .width            = width,
-        .height           = height, // positive = bottom-up, matches ReadBitmapFromFile's expectation
+        .height           = height,
         .colorPlanes      = 1,
         .bitsPerPixel     = (uint16_t)(channels * 8),
         .compression      = 0, // BI_RGB
@@ -265,9 +264,9 @@ int WriteBitmapToFile(const char *path, const Bitmap *bitmap)
         return FALSE;
     }
 
-    // Scratch row buffer: holds one row at a time, converted to BGR(A) with padding zeroed.
-    uint8_t *row = calloc(1, rowSize);
-    if (!row)
+    // Create a buffer to represent our working row data as (BGR(A)) - FREE WHEN DONE.
+    uint8_t *workingRowBuffer = calloc(1, rowSize);
+    if (!workingRowBuffer)
     {
         fclose(file);
         return FALSE;
@@ -275,43 +274,47 @@ int WriteBitmapToFile(const char *path, const Bitmap *bitmap)
 
     int writeFailed = FALSE;
 
-    // Bitmap->pixels is stored top-down in memory (row 0 = first row), same as ReadBitmapFromFile
-    // leaves it after unpacking. Since header.height is positive (bottom-up on disk), we write rows
-    // in reverse order here so row (height - 1) in memory ends up first on disk.
-    for (int rowIndex = 0; rowIndex < height && !writeFailed; rowIndex++)
+    // Bitmap->pixels is stored top-down in memory (row 0 = first row), which is how this application is setup to handle bitmaps. 
+    // Since header.height is positive (bottom-up on disk), we write rows in reverse order here so row (height - 1) in memory ends up first on disk.
+    for (int rowIndex = 0; rowIndex < height; rowIndex++)
     {
-        int sourceRow = height - 1 - rowIndex;
+        const int sourceRow = height - 1 - rowIndex;
         const uint8_t *srcRow = bitmap->pixels + (size_t)sourceRow * width * channels;
 
-        for (int col = 0; col < width * channels; col += channels)
-        {
-            uint8_t r = srcRow[col];
-            uint8_t g = srcRow[col + 1];
-            uint8_t b = srcRow[col + 2];
+        // Each column pixel of the bitmap is actually 4 separate portions of data used to represent the bgra segement of each pixel. This establishes our
+        // actual iteration count we will need to go through all channels of each pixel. 
+        const int totalChannelWidth = width * channels;
 
-            row[col]     = b;
-            row[col + 1] = g;
-            row[col + 2] = r;
+        for (int col = 0; col < totalChannelWidth; col += channels)
+        {
+            const uint8_t r = srcRow[col];
+            const uint8_t g = srcRow[col + 1];
+            const uint8_t b = srcRow[col + 2];
+
+            workingRowBuffer[col]     = b;
+            workingRowBuffer[col + 1] = g;
+            workingRowBuffer[col + 2] = r;
 
             if (channels == BITMAP_CHANNEL_FORMAT_RGBA)
             {
-                row[col + 3] = srcRow[col + 3];
+                workingRowBuffer[col + 3] = srcRow[col + 3];
             }
         }
 
-        // Padding bytes beyond width*channels are already zeroed by calloc and never touched again,
-        // since we only write into [0, width*channels) above.
-
-        if (fwrite(row, rowSize, 1, file) != 1)
+        // Once we've built out our row's pixel data above, attempt to write and fail out if we can't write these pixels as at the very best, we will have 
+        // a malformed bitmap.
+        if (fwrite(workingRowBuffer, rowSize, 1, file) != 1)
         {
             #if DEBUG
             fprintf(stderr, "WriteBitmapToFile: failed to write row %d to '%s'\n", rowIndex, path);
             #endif
             writeFailed = TRUE;
+
+            break;
         }
     }
 
-    free(row);
+    free(workingRowBuffer);
     fclose(file);
 
     return !writeFailed;

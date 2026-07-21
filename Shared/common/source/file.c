@@ -91,7 +91,7 @@ void GetRelativePathFromExecutableDirectory(char *outPath, size_t outSize, const
     snprintf(outPath, outSize, "%s%s", exePath, relativePath);
 }
 
-void GetFilesContainingFolder(char *filePathBuffer, char *containingFolderPathBuffer)
+void GetFilesContainingFolder(const char *filePathBuffer, char *containingFolderPathBuffer)
 {
     /*
         Paths can use either back or forward slashes, and various systems tolerate various mixed usages of these, 
@@ -138,7 +138,7 @@ BOOL GetCanonicalizedExecutableWorkingDirectory(wchar_t *outPath, size_t outSize
     GetRelativePathFromExecutableDirectory(rawPath, sizeof(rawPath), relativePath);
 
     wchar_t wRawPath[MAX_OS_DIRECTORY_LENGTH];
-    if (MultiByteToWideChar(CP_UTF8, 0, rawPath, -1, wRawPath, MAX_PATH) == 0)
+    if (MultiByteToWideChar(CP_UTF8, 0, rawPath, -1, wRawPath, MAX_OS_DIRECTORY_LENGTH) == 0)
     {
         return FALSE;
     }
