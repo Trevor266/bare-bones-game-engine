@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include "dimensions.h"
 #include "pixelbuffer.h"
+#include "windows.h"
+#include <stdio.h>
+#include "file.h"
+
 /*
     A note on bitmaps
     Bitmaps are just files that lay out image data in a very specific way. This format is defined as:
@@ -71,5 +75,7 @@ void            RenderBitmap
     int          destW,
     int          destH
 );
+int             WriteBitmapToFile(const char *path, const Bitmap *bitmap);
+Bitmap*         ReadBitmapFromFile(const char *path);
 
 #endif

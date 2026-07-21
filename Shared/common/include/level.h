@@ -67,5 +67,8 @@ void PrintLevelProperties(const Level *level);
 void FreeLevel(Level *level);
 bool LevelExists(char *levelName);
 Level *CreateLevel(const char *name, uint8_t layerCount, uint16_t tileWidth, uint16_t tileHeight, uint16_t levelWidth, uint16_t levelHeight);
+int CreateTransparentAlphaSheet(const char *assetFolderPath, int tileWidth, int tileHeight);
+int CreateNewAssetFolder(const char *assetFolderPath);
+int CreateNewLevelFolder(const char *directoryRootPath);
 
 #endif

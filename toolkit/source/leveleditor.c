@@ -157,7 +157,10 @@ void DrawEditorWindow(OffscreenBuffer WindowBackBuffer, Font font)
         0x00FFFFFF
     );
 
-    Bitmap *pickerIconBitmap = ReadBitmapFromFile("../assets/resources/bitmaps/pickericon.bmp");
+    char pickerIconPath[MAX_PATH];
+    GetRelativePathFromExecutableDirectory(pickerIconPath, sizeof(pickerIconPath), "../assets/resources/bitmaps/pickericon.bmp");
+
+    Bitmap *pickerIconBitmap = ReadBitmapFromFile(pickerIconPath);
     if (pickerIconBitmap)
     {
         PixelBuffer *pixelBuffer = ConvertBitmapToPixelBuffer(pickerIconBitmap);
@@ -179,7 +182,11 @@ void DrawEditorWindow(OffscreenBuffer WindowBackBuffer, Font font)
     }
 
     // TODO: Setup asset manager so these don't have to be read from disk every single frame...just for demo.
-    Bitmap *panIconBitmap = ReadBitmapFromFile("../assets/resources/bitmaps/panicon.bmp");
+
+    char panIconPath[MAX_PATH];
+    GetRelativePathFromExecutableDirectory(panIconPath, sizeof(panIconPath), "../assets/resources/bitmaps/panicon.bmp");
+
+    Bitmap *panIconBitmap = ReadBitmapFromFile(panIconPath);
     if (panIconBitmap)
     {
         PixelBuffer *pixelBuffer = ConvertBitmapToPixelBuffer(panIconBitmap);

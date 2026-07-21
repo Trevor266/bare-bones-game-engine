@@ -93,3 +93,226 @@ void RenderBitmap
         }
     }
 }
+
+Bitmap *ReadBitmapFromFile(const char *path)
+{
+    FILE *fileHandle = fopen(path, "rb");
+    if (!fileHandle)
+    {
+        return NULL;
+    }
+
+    // Use the file handle to read the bitmap header. The BitmapFileHeader struct should map 1:1 with 
+    // a bitmap file header. We first read the first byte of the file and read the size of the bitmap header.
+    // If this read succeeds, we then need to check the signature, compression methods, and bits per pixel to 
+    // verify this is a bitmap we can work with.
+    // Signature is valid when the value is 'BM'.
+    // Compression methods 0 and 3 mean RGB and RGB+alpa (RGBA).
+    // This supports a 24 or 32 bit bitmap.
+    BitmapFileHeader header;
+    bool headerReadSucceeded = fread(&header, sizeof(BitmapFileHeader), 1, fileHandle) == 1;
+    bool validHeaderSignature = header.signature == 0x4D42;
+    bool validBmpCompression = header.compression == 0 || header.compression == 3;
+    bool validBitsPerPixel = header.bitsPerPixel == 24 || header.bitsPerPixel == 32;
+    
+    // If any of these checks fail, we definitely don't have a valid bitmap, bail (rhyme).
+    if (!headerReadSucceeded || !validHeaderSignature || !validBmpCompression || !validBitsPerPixel)
+    {
+        fclose(fileHandle);
+        return NULL;
+    }
+
+    /*
+        Next get the relevant bitmap data. We need the height to be abs() because bitmaps either store the height in the header as 
+        positive if the pixels are laid out bottom to top, or negative if the pixels are laid out top to bottom.
+        We need to determine the size of a row of pixel data in the bitmap to properly read it. 
+        Bitmaps always pad pixel data to the nearest interval of 4. Because of this, we check the pixel width of the bitmap 
+        against the channel count, and round up to the nearest interval of 4 to get the size of the row.
+
+        Diagram for a 2 pixel wide 3 channel row layout
+
+        Pixel 1          Pixel 2          Row Padding
+        [B][G][R]        [B][G][R]        [pad][pad]
+        0   1   2        3   4   5        6     7
+
+        Padding is added to the end of the row to align it to the nearest interval of 4. If we had a 4 channel bitmap, the padding would not be needed 
+        because the extra 2 bytes would be used for the alpha channel instead of padding. In this sense you can think of it like 3 channel bitmaps may or 
+        may not include padding depending on how they end up aligning, and 4 channel bitmaps never will use padding as they always align on 4.
+    */
+    const int       width    = header.width;
+    const int       height   = abs(header.height);
+    const int       channels = header.bitsPerPixel / 8; // bits to bytes
+    const int       rowSize  = (width * channels + 3) & ~3; 
+    const int       padding = rowSize - (width * channels);
+    const uint8_t   isTopDown = header.height < 0;
+
+    // Allocate memory for a bitmap plus the pixel data size, we can then +1 bitmap to access the pixel data portion of this memory.
+    Bitmap *bitmap = malloc(sizeof(Bitmap) + (rowSize * height));
+    if (!bitmap)
+    {
+        fclose(fileHandle);
+        return NULL;
+    }
+    
+    // Set pixel pointer to upper portion of previously allocated memory, and set other bitmap information.
+    bitmap->pixels = (uint8_t *)(bitmap + 1);
+    bitmap->width    = width;
+    bitmap->height   = height;
+    bitmap->channels = channels;
+
+    // Set the file cursor to the pixel data offset to get the first pixel position. If this fails, stop.
+    if (fseek(fileHandle, header.pixelOffset, SEEK_SET)) 
+    {
+        free(bitmap);
+        fclose(fileHandle);
+        return NULL;
+    }
+
+    for (int row = 0; row < height; row++)
+    {
+        // Based on the orientation of the bitmap, get the next row number.
+        int nextRowNumber  = isTopDown ? row : (height - 1 - row);
+
+        // Get a pointer to the next chunk of row data out of our bitmap structure based on the current iteration.
+        uint8_t *nextRow = bitmap->pixels + nextRowNumber * width * channels;
+
+        // Attempt to write the next chunk of pixel data into the bitmap pixel buffer, if we fail to do this, we cannot guarantee validity of the bitmap, bail out.
+        if (fread(nextRow, width * channels, 1, fileHandle) != 1)
+        {
+            free(bitmap);
+            fclose(fileHandle);
+            return NULL;
+        }
+
+        // Now move the file io cursor to account for any potential padding.
+        if (padding)
+        {
+            fseek(fileHandle, padding, SEEK_CUR);
+        }
+            
+
+        // We convert BGR(A) to RGB(A) here, because bitmaps use BGR(A). 
+        for (int col = 0; col < width * channels; col += channels)
+        {
+            uint8_t b = nextRow[col];
+            uint8_t g = nextRow[col + 1];
+            uint8_t r = nextRow[col + 2];
+
+            // Set the next row's r/g/b components accordingly by offsetting from the column.
+            nextRow[col]     = r;
+            nextRow[col + 1] = g;
+            nextRow[col + 2] = b;
+        }
+    }
+
+    fclose(fileHandle);
+    return bitmap;
+}
+
+int WriteBitmapToFile(const char *path, const Bitmap *bitmap)
+{
+    if (!bitmap || !bitmap->pixels)
+    {
+        return FALSE;
+    }
+
+    // Only support the same two formats ReadBitmapFromFile understands.
+    if (bitmap->channels != BITMAP_CHANNEL_FORMAT_RGB && bitmap->channels != BITMAP_CHANNEL_FORMAT_RGBA)
+    {
+        return FALSE;
+    }
+
+    const int width    = bitmap->width;
+    const int height    = bitmap->height;
+    const int channels = (int)bitmap->channels;
+    const int rowSize  = (width * channels + 3) & ~3;
+    const int padding  = rowSize - (width * channels);
+    const uint32_t pixelDataSize = (uint32_t)(rowSize * height);
+
+    BitmapFileHeader header = {
+        .signature        = 0x4D42, // 'BM'
+        .fileSize         = sizeof(BitmapFileHeader) + pixelDataSize,
+        .reserved         = 0,
+        .pixelOffset      = sizeof(BitmapFileHeader),
+        .dibSize          = sizeof(BitmapFileHeader) - offsetof(BitmapFileHeader, dibSize),
+        .width            = width,
+        .height           = height, // positive = bottom-up, matches ReadBitmapFromFile's expectation
+        .colorPlanes      = 1,
+        .bitsPerPixel     = (uint16_t)(channels * 8),
+        .compression      = 0, // BI_RGB
+        .imageSize        = pixelDataSize,
+        .xPixelsPerMeter  = 0,
+        .yPixelsPerMeter  = 0,
+        .colorsInTable    = 0,
+        .importantColors  = 0
+    };
+
+    FILE *file = fopen(path, "wb");
+    if (!file)
+    {
+        #if DEBUG
+        fprintf(stderr, "WriteBitmapToFile: failed to open '%s' for writing\n", path);
+        #endif
+        return FALSE;
+    }
+
+    if (fwrite(&header, sizeof(header), 1, file) != 1)
+    {
+        #if DEBUG
+        fprintf(stderr, "WriteBitmapToFile: failed to write header to '%s'\n", path);
+        #endif
+        fclose(file);
+        return FALSE;
+    }
+
+    // Scratch row buffer: holds one row at a time, converted to BGR(A) with padding zeroed.
+    uint8_t *row = calloc(1, rowSize);
+    if (!row)
+    {
+        fclose(file);
+        return FALSE;
+    }
+
+    int writeFailed = FALSE;
+
+    // Bitmap->pixels is stored top-down in memory (row 0 = first row), same as ReadBitmapFromFile
+    // leaves it after unpacking. Since header.height is positive (bottom-up on disk), we write rows
+    // in reverse order here so row (height - 1) in memory ends up first on disk.
+    for (int rowIndex = 0; rowIndex < height && !writeFailed; rowIndex++)
+    {
+        int sourceRow = height - 1 - rowIndex;
+        const uint8_t *srcRow = bitmap->pixels + (size_t)sourceRow * width * channels;
+
+        for (int col = 0; col < width * channels; col += channels)
+        {
+            uint8_t r = srcRow[col];
+            uint8_t g = srcRow[col + 1];
+            uint8_t b = srcRow[col + 2];
+
+            row[col]     = b;
+            row[col + 1] = g;
+            row[col + 2] = r;
+
+            if (channels == BITMAP_CHANNEL_FORMAT_RGBA)
+            {
+                row[col + 3] = srcRow[col + 3];
+            }
+        }
+
+        // Padding bytes beyond width*channels are already zeroed by calloc and never touched again,
+        // since we only write into [0, width*channels) above.
+
+        if (fwrite(row, rowSize, 1, file) != 1)
+        {
+            #if DEBUG
+            fprintf(stderr, "WriteBitmapToFile: failed to write row %d to '%s'\n", rowIndex, path);
+            #endif
+            writeFailed = TRUE;
+        }
+    }
+
+    free(row);
+    fclose(file);
+
+    return !writeFailed;
+}
