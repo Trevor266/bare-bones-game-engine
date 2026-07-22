@@ -131,27 +131,35 @@ void AppendFilePath(char *dest, size_t destSize, const char *basePath, const cha
     snprintf(dest, destSize, "%s%s", basePath, appendedPath);
 }
 
-// TODO: I think this should return back a char* and require the caller to cast.
-BOOL GetCanonicalizedExecutableWorkingDirectory(wchar_t *outPath, size_t outSize, const char *relativePath)
+// Normalizes path to a standard format
+// TODO: As name suggests, it would be nice to have this be generic, right now this is very much a Win32-Centric implementation.
+BOOL GetCanonicalizedExecutableWorkingDirectory(wchar_t *outPathBuffer, size_t outPathBufferSize, const char *relativePath)
 {
-    char rawPath[MAX_OS_DIRECTORY_LENGTH];
-    GetRelativePathFromExecutableDirectory(rawPath, sizeof(rawPath), relativePath);
+    // Build out the relative path to the executable's working directory. This will then be copied into a wchar buffer that 
+    // we can pass to windows to get the full path name as a canonicalized path.
+    char rawPathBuffer[MAX_OS_DIRECTORY_LENGTH];
+    GetRelativePathFromExecutableDirectory(rawPathBuffer, sizeof(rawPathBuffer), relativePath);
 
-    wchar_t wRawPath[MAX_OS_DIRECTORY_LENGTH];
-    if (MultiByteToWideChar(CP_UTF8, 0, rawPath, -1, wRawPath, MAX_OS_DIRECTORY_LENGTH) == 0)
+    wchar_t wRawPathBuffer[MAX_OS_DIRECTORY_LENGTH];
+    if (MultiByteToWideChar(CP_UTF8, 0, rawPathBuffer, -1, wRawPathBuffer, MAX_OS_DIRECTORY_LENGTH) == 0)
     {
         return FALSE;
     }
 
-    wchar_t wCanonicalPath[MAX_OS_DIRECTORY_LENGTH];
-    DWORD canonResult = GetFullPathNameW(wRawPath, MAX_OS_DIRECTORY_LENGTH, wCanonicalPath, NULL);
+    wchar_t wCanonicalPathBuffer[MAX_OS_DIRECTORY_LENGTH];
+
+    // A good note on using this path:
+    // To avoid problems caused by inconsistent results, multithreaded applications and shared library code should avoid 
+    // using relative paths. If a relative path is received, it should be consumed exactly once, either by passing the relative path directly 
+    // to a function like CreateFile, or by converting it to an absolute path and using the absolute path from that point forward.
+    DWORD canonResult = GetFullPathNameW(wRawPathBuffer, MAX_OS_DIRECTORY_LENGTH, wCanonicalPathBuffer, NULL);
     if (canonResult == 0 || canonResult > MAX_OS_DIRECTORY_LENGTH)
     {
         return FALSE;
     }
 
-    wcsncpy(outPath, wCanonicalPath, outSize / sizeof(wchar_t));
-    outPath[outSize / sizeof(wchar_t) - 1] = L'\0';
+    wcsncpy(outPathBuffer, wCanonicalPathBuffer, outPathBufferSize / sizeof(wchar_t));
+    outPathBuffer[outPathBufferSize / sizeof(wchar_t) - 1] = L'\0';
 
     return TRUE;
 }

@@ -57,9 +57,9 @@ typedef struct Level {
     uint8_t                     layerCount;
     uint8_t                     sheetCount;
     uint32_t                    tileCount;
-    Bitmap                      **sheets;
-    LevelSpriteSheetMetadata    *sheetMetaData;  // sheetCount entries
-    GameTile                    *tiles;          // tileCount entries
+    Bitmap                      **sheetsBuffer;
+    LevelSpriteSheetMetadata    *sheetMetaDataBuffer;   // sheetCount entries
+    GameTile                    *tiles;                 // tileCount entries
 } Level;
 
 Level *ReadLevel(const char *filePath);

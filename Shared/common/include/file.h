@@ -19,7 +19,7 @@ static  FILE*       GetFileHandle(const char *fileHandle);
 static  long        GetFileBufferSize(FILE *fileHandle);
 int                 WriteBinaryFile(FILE *file, const char *contents);
 void                GetRelativePathFromExecutableDirectory(char *outPath, size_t outSize, const char *relativePath);
-BOOL                GetCanonicalizedExecutableWorkingDirectory(wchar_t *outPath, size_t outSize, const char *relativePath);
+BOOL                GetCanonicalizedExecutableWorkingDirectory(wchar_t *outPathBuffer, size_t outPathBufferSize, const char *relativePath);
 BOOL                BuildPIDLISTFromPath(wchar_t *directoryPath, PIDLIST_ABSOLUTE *pidlAbsolute);
 
 #endif

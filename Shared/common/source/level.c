@@ -1,91 +1,93 @@
 
 #include "../include/level.h"
 
-Level *ReadLevel(const char *levelFilePath)
+Level *ReadLevel(const char *levelFilePathBuffer)
 {
-    FILE *file = fopen(levelFilePath, "rb");
-    if (!file)
+    FILE *levelFile = fopen(levelFilePathBuffer, "rb");
+    if (!levelFile)
     {
         #if DEBUG
-        fprintf(stderr, "ReadLevel: failed to open '%s'\n", levelFilePath);
+        fprintf(stderr, "ReadLevel: failed to open '%s'\n", levelFilePathBuffer);
         #endif
         return NULL;
     }
 
     LevelFileHeader header;
-    if (fread(&header, sizeof(LevelFileHeader), 1, file) != 1)
+    if (fread(&header, sizeof(LevelFileHeader), 1, levelFile) != 1)
     {
         #if DEBUG
-        fprintf(stderr, "ReadLevel: failed to read header from '%s'\n", levelFilePath);
+        fprintf(stderr, "ReadLevel: failed to read header from '%s'\n", levelFilePathBuffer);
         #endif
-        fclose(file);
+        fclose(levelFile);
         return NULL;
     }
 
     if (header.signature != LEVEL_FILE_SIGNATURE)
     {
         #if DEBUG
-        fprintf(stderr, "ReadLevel: bad signature 0x%08X in '%s'\n", header.signature, levelFilePath);
+        fprintf(stderr, "ReadLevel: bad signature 0x%08X in '%s'\n", header.signature, levelFilePathBuffer);
         #endif
-        fclose(file);
+        fclose(levelFile);
         return NULL;
     }
 
     Level *level = malloc(sizeof(Level));
     if (!level)
     {
-        fclose(file);
+        fclose(levelFile);
         return NULL;
     }
 
-    level->sourcePath = _strdup(levelFilePath);
-    level->levelWidth  = header.levelWidth;
-    level->levelHeight = header.levelHeight;
-    level->tileWidth   = header.tileWidth;
-    level->tileHeight  = header.tileHeight;
-    level->layerCount  = header.layerCount;
-    level->sheetCount  = header.sheetCount;
-    level->tileCount   = header.tileCount;
-    level->sheets        = NULL;
-    level->sheetMetaData = NULL;
-    level->tiles          = NULL;
+    level->sourcePath               = _strdup(levelFilePathBuffer);
+    level->levelWidth               = header.levelWidth;
+    level->levelHeight              = header.levelHeight;
+    level->tileWidth                = header.tileWidth;
+    level->tileHeight               = header.tileHeight;
+    level->layerCount               = header.layerCount;
+    level->sheetCount               = header.sheetCount;
+    level->tileCount                = header.tileCount;
+    level->sheetsBuffer             = NULL;
+    level->sheetMetaDataBuffer      = NULL;
+    level->tiles                    = NULL;
 
     if (level->sheetCount > 0)
     {
-        level->sheetMetaData = malloc(sizeof(LevelSpriteSheetMetadata) * level->sheetCount);
-        level->sheets        = malloc(sizeof(Bitmap*) * level->sheetCount);
+        level->sheetMetaDataBuffer = malloc(sizeof(LevelSpriteSheetMetadata) * level->sheetCount);
+        level->sheetsBuffer        = malloc(sizeof(Bitmap*) * level->sheetCount);
 
-        // A level consists of a bitmap per spritesheet, this bitmap is read into memory in full and used to pull tile data.
+        // A level contains spritesheets, stored as bitmap memory, this bitmap data is read into memory in full and used to pull tile data.
         // The sheets are stored within a sheets folder present in the root of the level.
         // To start off, get the parent folder of the level so we know what directory we are working with.
-        char sheetBasePath[LEVEL_FILE_PATH_MAX];
-        GetFilesContainingFolder(levelFilePath, sheetBasePath);
-        AppendFilePath(sheetBasePath, sizeof(sheetBasePath), sheetBasePath, "sheets/");
+        char sheetBasePathBuffer[LEVEL_FILE_PATH_MAX];
+        GetFilesContainingFolder(levelFilePathBuffer, sheetBasePathBuffer);
+        AppendFilePath(sheetBasePathBuffer, sizeof(sheetBasePathBuffer), sheetBasePathBuffer, "sheets/");
 
-        if (fread(level->sheetMetaData, sizeof(LevelSpriteSheetMetadata), level->sheetCount, file) != level->sheetCount)
+        // Now we have the full path to the level's sheets folder, use this to read the sheet meta data from the file, sheet meta data includes things like the physical file name of the asset.
+        if (fread(level->sheetMetaDataBuffer, sizeof(LevelSpriteSheetMetadata), level->sheetCount, levelFile) != level->sheetCount)
         {
             #if DEBUG
             fprintf(stderr, "ReadLevel: failed to read sheet metadata from '%s'\n", levelFilePath);
             #endif
             FreeLevel(level);
-            fclose(file);
+            fclose(levelFile);
             return NULL;
         }
 
         for (uint8_t i = 0; i < level->sheetCount; i++)
         {
-            char sheetPath[LEVEL_FILE_PATH_MAX] = "";
-            AppendFilePath(sheetPath, sizeof(sheetPath), sheetBasePath, level->sheetMetaData[i].Name);
+            // For each sheet, load the physical bitmaps for each tilesheet into memory.
+            char sheetPathBuffer[LEVEL_FILE_PATH_MAX] = "";
+            AppendFilePath(sheetPathBuffer, sizeof(sheetPathBuffer), sheetBasePathBuffer, level->sheetMetaDataBuffer[i].Name);
 
-            level->sheets[i] = ReadBitmapFromFile(sheetPath);
+            level->sheetsBuffer[i] = ReadBitmapFromFile(sheetPathBuffer);
 
-            if (!level->sheets[i])
+            if (!level->sheetsBuffer[i])
             {
                 #if DEBUG
-                fprintf(stderr, "ReadLevel: failed to load sheet '%s'\n", sheetPath);
+                fprintf(stderr, "ReadLevel: failed to load sheet '%s'\n", sheetPathBuffer);
                 #endif
                 FreeLevel(level);
-                fclose(file);
+                fclose(levelFile);
                 return NULL;
             }
         }
@@ -96,7 +98,7 @@ Level *ReadLevel(const char *levelFilePath)
         // TODO: Impelemnt tile data
     }
 
-    fclose(file);
+    fclose(levelFile);
     return level;
 }
 
@@ -124,8 +126,8 @@ void FreeLevel(Level *level)
     }
     
     free(level->tiles);
-    free(level->sheetMetaData);
-    free(level->sheets);
+    free(level->sheetMetaDataBuffer);
+    free(level->sheetsBuffer);
     free(level);
 }
 
