@@ -13,11 +13,11 @@
 #define LEVEL_FILE_SIGNATURE            0x454C564C // ELVL
 #define MAX_SPRITESHEET_FILE_NAME       256        // Seems good enough
 #define LEVEL_BASE_PATH                 "../assets/resources/levels/"
+#define DEFAULT_ALPHA_SHEET_FILE_NAME   "alpha.bmp"
 
-// TODO: These may get #if'd for platform specific path sizes later - Shared ugly windows const for now.
-#define LEVEL_NAME_MAX                  MAX_PATH                                     
-#define LEVEL_FOLDER_PATH_MAX           MAX_PATH
-#define LEVEL_FILE_PATH_MAX             MAX_PATH
+#define LEVEL_NAME_MAX                  MAX_OS_DIRECTORY_LENGTH                                     
+#define LEVEL_FOLDER_PATH_MAX           MAX_OS_DIRECTORY_LENGTH
+#define LEVEL_FILE_PATH_MAX             MAX_OS_DIRECTORY_LENGTH
 
 /*
     level.h

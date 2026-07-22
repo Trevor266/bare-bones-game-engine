@@ -66,7 +66,7 @@ Level *ReadLevel(const char *levelFilePathBuffer)
         if (fread(level->sheetMetaDataBuffer, sizeof(LevelSpriteSheetMetadata), level->sheetCount, levelFile) != level->sheetCount)
         {
             #if DEBUG
-            fprintf(stderr, "ReadLevel: failed to read sheet metadata from '%s'\n", levelFilePath);
+            fprintf(stderr, "ReadLevel: failed to read sheet metadata from '%s'\n", levelFilePathBuffer);
             #endif
             FreeLevel(level);
             fclose(levelFile);
@@ -145,36 +145,36 @@ Level *CreateLevel
 {
     // Levels are written to a shared asset folder that's copied into the toolkit and engine builds at runtime. 
     // Here we are getting the exectuable directory and then navigating back to the shared asset folder with a relative path.
-    char basePath[MAX_OS_DIRECTORY_LENGTH];
-    GetRelativePathFromExecutableDirectory(basePath, sizeof(basePath), LEVEL_BASE_PATH);
+    char levelsDirectoryPathBuffer[MAX_OS_DIRECTORY_LENGTH];
+    GetRelativePathFromExecutableDirectory(levelsDirectoryPathBuffer, sizeof(levelsDirectoryPathBuffer), LEVEL_BASE_PATH);
 
-    char levelFolderPath[MAX_OS_DIRECTORY_LENGTH];
-    snprintf(levelFolderPath, sizeof(levelFolderPath), "%s%s", basePath, name);
+    char newLevelFolderPathBuffer[MAX_OS_DIRECTORY_LENGTH];
+    snprintf(newLevelFolderPathBuffer, sizeof(newLevelFolderPathBuffer), "%s%s", levelsDirectoryPathBuffer, name);
 
     // If we weren't able to create the folder, this means there was either a canceled user action, naming conflict, or some 
     // other error. In any case we can go no further.
-    if (CreateNewLevelFolder(levelFolderPath) == 0)
+    if (CreateNewLevelFolder(newLevelFolderPathBuffer) == 0)
     {
         return NULL;
     }
 
-    char sheetFolderPath[MAX_OS_DIRECTORY_LENGTH];
-    snprintf(sheetFolderPath, sizeof(sheetFolderPath), "%s%s", levelFolderPath, "/sheets");
+    char sheetFolderPathBuffer[MAX_OS_DIRECTORY_LENGTH];
+    snprintf(sheetFolderPathBuffer, sizeof(sheetFolderPathBuffer), "%s%s", newLevelFolderPathBuffer, "/sheets");
 
     // Create a new asset folder for the level that will house sprite sheets and various resources.
-    if (!CreateNewAssetFolder(sheetFolderPath))
+    if (!CreateNewAssetFolder(sheetFolderPathBuffer))
     {
         return FALSE;
     }
 
     // Tiles by default will use a transparent pixel buffer sized at the level's tile width and height. This creates that tile "sheet".
-    if (!CreateTransparentAlphaSheet(sheetFolderPath, tileWidth, tileHeight))
+    if (!CreateTransparentAlphaSheet(sheetFolderPathBuffer, tileWidth, tileHeight))
     {
         return FALSE;
     }
 
-    char bblFilePath[MAX_OS_DIRECTORY_LENGTH];
-    snprintf(bblFilePath, sizeof(bblFilePath), "%s/%s.bbl", levelFolderPath, name);
+    char levelFilePathBuffer[MAX_OS_DIRECTORY_LENGTH];
+    snprintf(levelFilePathBuffer, sizeof(levelFilePathBuffer), "%s/%s.bbl", newLevelFolderPathBuffer, name);
 
     LevelFileHeader header = {
         .signature   = LEVEL_FILE_SIGNATURE,
@@ -183,21 +183,21 @@ Level *CreateLevel
         .tileWidth   = (uint8_t)tileWidth,
         .tileHeight  = (uint8_t)tileHeight,
         .layerCount  = layerCount,
-        .sheetCount  = 1, // Initialize with 1 for the blank alpha tile "sheet"
+        .sheetCount  = 1, // Initialize with 1 for the blank alpha tile "sheet" - Update as new default sheets are needed.
         .tileCount   = ((levelWidth / tileWidth) * (levelHeight / tileHeight)) * layerCount
     };
 
-    FILE *file = fopen(bblFilePath, "wb");
-    fwrite(&header, sizeof(LevelFileHeader), 1, file);
+    FILE *levelFile = fopen(levelFilePathBuffer, "wb");
+    fwrite(&header, sizeof(LevelFileHeader), 1, levelFile);
 
-    LevelSpriteSheetMetadata alphaSheetMeta = {0};
+    LevelSpriteSheetMetadata alphaSheetMetadata = {0};
     // TODO: Get file name from somewhere else.
-    strncpy_s(alphaSheetMeta.Name, sizeof(alphaSheetMeta.Name), "alpha.bmp", _TRUNCATE);
-    fwrite(&alphaSheetMeta, sizeof(LevelSpriteSheetMetadata), 1, file);
+    strncpy_s(alphaSheetMetadata.Name, sizeof(alphaSheetMetadata.Name), DEFAULT_ALPHA_SHEET_FILE_NAME, _TRUNCATE);
+    fwrite(&alphaSheetMetadata, sizeof(LevelSpriteSheetMetadata), 1, levelFile);
 
-    fclose(file);
+    fclose(levelFile);
 
-    Level *level = ReadLevel(bblFilePath);
+    Level *level = ReadLevel(levelFilePathBuffer);
 
     #if DEBUG
     if (level)
