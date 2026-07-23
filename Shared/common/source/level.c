@@ -95,7 +95,27 @@ Level *ReadLevel(const char *levelFilePathBuffer)
 
     if (level->tileCount > 0)
     {
-        // TODO: Impelemnt tile data
+        level->tiles = malloc(sizeof(GameTile) * level->tileCount);
+        if (!level->tiles)
+        {
+            #if DEBUG
+                fprintf(stderr, "ReadLevel: failed to allocate memory for tiles\n");
+            #endif
+            FreeLevel(level);
+            fclose(levelFile);
+            return NULL;
+        }
+
+        size_t tilesRead = fread(level->tiles, sizeof(GameTile), level->tileCount, levelFile);
+        if (tilesRead != level->tileCount)
+        {
+            #if DEBUG
+                fprintf(stderr, "ReadLevel: failed to allocate correct amount of game tiles\n");
+            #endif
+            FreeLevel(level);
+            fclose(levelFile);
+            return NULL;
+        }
     }
 
     fclose(levelFile);
@@ -189,10 +209,37 @@ Level *CreateLevel
 
     FILE *levelFile = fopen(levelFilePathBuffer, "wb");
     fwrite(&header, sizeof(LevelFileHeader), 1, levelFile);
-
+    if (!levelFile)
+    {
+        return NULL;
+    }
     LevelSpriteSheetMetadata alphaSheetMetadata = {0};
     strncpy_s(alphaSheetMetadata.Name, sizeof(alphaSheetMetadata.Name), DEFAULT_ALPHA_SHEET_FILE_NAME, _TRUNCATE);
     fwrite(&alphaSheetMetadata, sizeof(LevelSpriteSheetMetadata), 1, levelFile);
+
+    // Fill out tiles with the alpha sprite sheet that was generated.
+    uint16_t cols = levelWidth  / tileWidth;
+    uint16_t rows = levelHeight / tileHeight;
+
+    for (uint8_t layer = 0; layer < layerCount; layer++)
+    {
+        for (uint16_t row = 0; row < rows; row++)
+        {
+            for (uint16_t col = 0; col < cols; col++)
+            {
+                GameTile gameTile = {0};
+
+                gameTile.Layer                      = layer;
+                gameTile.LevelColumn                = col;
+                gameTile.LevelRow                   = row;
+                gameTile.ParentSheetColumn          = 0;
+                gameTile.ParentSheetRow             = 0;
+                strncpy_s(gameTile.ParentSheet, sizeof(gameTile.ParentSheet), alphaSheetMetadata.Name, _TRUNCATE);
+
+                fwrite(&gameTile, sizeof(GameTile), 1, levelFile);
+            }
+        }
+    }
 
     fclose(levelFile);
 
