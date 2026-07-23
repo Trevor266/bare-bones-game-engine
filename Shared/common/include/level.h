@@ -40,7 +40,7 @@ typedef struct
     uint8_t     tileWidth;      // tile size, in pixels
     uint8_t     tileHeight;
     uint8_t     layerCount;
-    uint8_t     sheetCount;
+    uint8_t     spriteSheetCount;
     uint32_t    tileCount;
 } LevelFileHeader;
 
@@ -55,10 +55,10 @@ typedef struct Level {
     uint16_t                    tileWidth;
     uint16_t                    tileHeight;
     uint8_t                     layerCount;
-    uint8_t                     sheetCount;
+    uint8_t                     spriteSheetCount;
     uint32_t                    tileCount;
-    Bitmap                      **sheetsBuffer;
-    LevelSpriteSheetMetadata    *sheetMetaDataBuffer;   // sheetCount entries
+    Bitmap                      **spriteSheetsBuffer;
+    LevelSpriteSheetMetadata    *spriteSheetMetaDataBuffer;   // spriteSheetCount entries
     GameTile                    *tiles;                 // tileCount entries
 } Level;
 

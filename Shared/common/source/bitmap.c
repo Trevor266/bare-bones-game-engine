@@ -94,9 +94,9 @@ void RenderBitmap
     }
 }
 
-Bitmap *ReadBitmapFromFile(const char *path)
+Bitmap *ReadBitmapFromFile(const char *pathBuffer)
 {
-    FILE *fileHandle = fopen(path, "rb");
+    FILE *fileHandle = fopen(pathBuffer, "rb");
     if (!fileHandle)
     {
         return NULL;

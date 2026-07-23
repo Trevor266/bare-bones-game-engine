@@ -38,22 +38,22 @@ Level *ReadLevel(const char *levelFilePathBuffer)
         return NULL;
     }
 
-    level->sourcePath               = _strdup(levelFilePathBuffer);
-    level->levelWidth               = header.levelWidth;
-    level->levelHeight              = header.levelHeight;
-    level->tileWidth                = header.tileWidth;
-    level->tileHeight               = header.tileHeight;
-    level->layerCount               = header.layerCount;
-    level->sheetCount               = header.sheetCount;
-    level->tileCount                = header.tileCount;
-    level->sheetsBuffer             = NULL;
-    level->sheetMetaDataBuffer      = NULL;
-    level->tiles                    = NULL;
+    level->sourcePath                   = _strdup(levelFilePathBuffer);
+    level->levelWidth                   = header.levelWidth;
+    level->levelHeight                  = header.levelHeight;
+    level->tileWidth                    = header.tileWidth;
+    level->tileHeight                   = header.tileHeight;
+    level->layerCount                   = header.layerCount;
+    level->spriteSheetCount             = header.spriteSheetCount;
+    level->tileCount                    = header.tileCount;
+    level->spriteSheetsBuffer           = NULL;
+    level->spriteSheetMetaDataBuffer    = NULL;
+    level->tiles                        = NULL;
 
-    if (level->sheetCount > 0)
+    if (level->spriteSheetCount > 0)
     {
-        level->sheetMetaDataBuffer = malloc(sizeof(LevelSpriteSheetMetadata) * level->sheetCount);
-        level->sheetsBuffer        = malloc(sizeof(Bitmap*) * level->sheetCount);
+        level->spriteSheetMetaDataBuffer = malloc(sizeof(LevelSpriteSheetMetadata) * level->spriteSheetCount);
+        level->spriteSheetsBuffer        = malloc(sizeof(Bitmap*) * level->spriteSheetCount);
 
         // A level contains spritesheets, stored as bitmap memory, this bitmap data is read into memory in full and used to pull tile data.
         // The sheets are stored within a sheets folder present in the root of the level.
@@ -63,7 +63,7 @@ Level *ReadLevel(const char *levelFilePathBuffer)
         AppendFilePath(sheetBasePathBuffer, sizeof(sheetBasePathBuffer), sheetBasePathBuffer, "sheets/");
 
         // Now we have the full path to the level's sheets folder, use this to read the sheet meta data from the file, sheet meta data includes things like the physical file name of the asset.
-        if (fread(level->sheetMetaDataBuffer, sizeof(LevelSpriteSheetMetadata), level->sheetCount, levelFile) != level->sheetCount)
+        if (fread(level->spriteSheetMetaDataBuffer, sizeof(LevelSpriteSheetMetadata), level->spriteSheetCount, levelFile) != level->spriteSheetCount)
         {
             #if DEBUG
             fprintf(stderr, "ReadLevel: failed to read sheet metadata from '%s'\n", levelFilePathBuffer);
@@ -73,15 +73,15 @@ Level *ReadLevel(const char *levelFilePathBuffer)
             return NULL;
         }
 
-        for (uint8_t i = 0; i < level->sheetCount; i++)
+        for (uint8_t i = 0; i < level->spriteSheetCount; i++)
         {
             // For each sheet, load the physical bitmaps for each tilesheet into memory.
             char sheetPathBuffer[LEVEL_FILE_PATH_MAX] = "";
-            AppendFilePath(sheetPathBuffer, sizeof(sheetPathBuffer), sheetBasePathBuffer, level->sheetMetaDataBuffer[i].Name);
+            AppendFilePath(sheetPathBuffer, sizeof(sheetPathBuffer), sheetBasePathBuffer, level->spriteSheetMetaDataBuffer[i].Name);
 
-            level->sheetsBuffer[i] = ReadBitmapFromFile(sheetPathBuffer);
+            level->spriteSheetsBuffer[i] = ReadBitmapFromFile(sheetPathBuffer);
 
-            if (!level->sheetsBuffer[i])
+            if (!level->spriteSheetsBuffer[i])
             {
                 #if DEBUG
                 fprintf(stderr, "ReadLevel: failed to load sheet '%s'\n", sheetPathBuffer);
@@ -114,7 +114,7 @@ void PrintLevelProperties(const Level *level)
     printf("----Level size (tiles) : %u x %u\n", level->levelWidth, level->levelHeight);
     printf("----Tile size (px)     : %u x %u\n", level->tileWidth, level->tileHeight);
     printf("----Layer count        : %u\n", level->layerCount);
-    printf("----Sheet count        : %u\n", level->sheetCount);
+    printf("----Sheet count        : %u\n", level->spriteSheetCount);
     printf("----Tile count         : %u\n", level->tileCount);
 }
 
@@ -126,8 +126,8 @@ void FreeLevel(Level *level)
     }
     
     free(level->tiles);
-    free(level->sheetMetaDataBuffer);
-    free(level->sheetsBuffer);
+    free(level->spriteSheetMetaDataBuffer);
+    free(level->spriteSheetsBuffer);
     free(level);
 }
 
@@ -183,7 +183,7 @@ Level *CreateLevel
         .tileWidth   = (uint8_t)tileWidth,
         .tileHeight  = (uint8_t)tileHeight,
         .layerCount  = layerCount,
-        .sheetCount  = 1, // Initialize with 1 for the blank alpha tile "sheet" - Update as new default sheets are needed.
+        .spriteSheetCount  = 1, // Initialize with 1 for the blank alpha tile "sheet" - Update as new default sheets are needed.
         .tileCount   = ((levelWidth / tileWidth) * (levelHeight / tileHeight)) * layerCount
     };
 
@@ -191,7 +191,6 @@ Level *CreateLevel
     fwrite(&header, sizeof(LevelFileHeader), 1, levelFile);
 
     LevelSpriteSheetMetadata alphaSheetMetadata = {0};
-    // TODO: Get file name from somewhere else.
     strncpy_s(alphaSheetMetadata.Name, sizeof(alphaSheetMetadata.Name), DEFAULT_ALPHA_SHEET_FILE_NAME, _TRUNCATE);
     fwrite(&alphaSheetMetadata, sizeof(LevelSpriteSheetMetadata), 1, levelFile);
 
